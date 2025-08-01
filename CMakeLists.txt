@@ -25,6 +25,7 @@ set(SOURCES
     src/star.cpp
     src/desktopUtils.cpp
     src/trayUtils.cpp
+    src/utils.cpp
 )
 
 # Headers (not strictly needed for compilation, but good for IDE integration)
@@ -34,6 +35,7 @@ set(HEADERS
     src/desktopUtils.h
     src/trayUtils.h
     src/resource.h
+    src/utils.h
 )
 
 # Resource files
