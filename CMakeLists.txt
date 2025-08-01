@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
-project(DlaunayFlow LANGUAGES CXX C)
+project(Dlaunay-Flow LANGUAGES CXX C)
 
 # Set C++ standard to C++20
 set(CMAKE_CXX_STANDARD 20)
@@ -52,32 +52,25 @@ set(EXTRA_FILES
 )
 
 # Create the executable
-add_executable(DlaunayFlow ${SOURCES} ${HEADERS} ${RESOURCES})
+add_executable(Dlaunay-Flow ${SOURCES} ${HEADERS} ${RESOURCES})
 
 if(MSVC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE "_UNICODE" "UNICODE")
 endif()
 
 # Link libraries
-target_link_libraries(DlaunayFlow
+target_link_libraries(Dlaunay-Flow
     opengl32.lib
     triangle.lib
     glfw3_mt.lib
 )
 
 # Set library directories
-target_link_directories(DlaunayFlow PRIVATE lib)
+target_link_directories(Dlaunay-Flow PRIVATE lib)
 
 # Configuration-specific settings
-# Debug configuration
-target_compile_options(DlaunayFlow PRIVATE $<$<CONFIG:Debug>:
-    /MTd          # MultiThreadedDebug runtime
-    /D_DEBUG
-    /D_CONSOLE
->)
-
 # Release configuration
-target_compile_options(DlaunayFlow PRIVATE $<$<CONFIG:Release>:
+target_compile_options(Dlaunay-Flow PRIVATE $<$<CONFIG:Release>:
     /MT           # MultiThreaded runtime
     /DNDEBUG
     /D_CONSOLE
@@ -85,18 +78,18 @@ target_compile_options(DlaunayFlow PRIVATE $<$<CONFIG:Release>:
     /O2           # Optimize for speed
 >)
 
-target_link_options(DlaunayFlow PRIVATE $<$<CONFIG:Release>:
+target_link_options(Dlaunay-Flow PRIVATE $<$<CONFIG:Release>:
     /LTCG         # Link-time code generation
     /OPT:REF      # Optimize references
     /OPT:ICF      # Enable COMDAT folding
 >)
 
 # Copy additional files to build directory
-add_custom_command(TARGET DlaunayFlow POST_BUILD
+add_custom_command(TARGET Dlaunay-Flow POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_SOURCE_DIR}/resource/settings.json
-        $<TARGET_FILE_DIR:DlaunayFlow>
+        $<TARGET_FILE_DIR:Dlaunay-Flow>
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/shaders
-        $<TARGET_FILE_DIR:DlaunayFlow>/shaders
+        $<TARGET_FILE_DIR:Dlaunay-Flow>/shaders
 )
