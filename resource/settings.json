@@ -1,0 +1,29 @@
+{
+    "fps": 120,
+    "vsync": true,
+
+    "background-colors": [
+      [ 0.98, 0.33, 0.33, 1 ],
+      [ 0.98, 0.55, 0.15, 1 ],
+      [ 0.96, 0.82, 0.2, 1 ],
+      [ 0.47, 0.3, 0.58, 1 ]
+    ],
+  
+    "stars": {
+      "draw-stars": true,
+      "segments": 12,
+      "radius": 0.01,
+      "count": 700,
+      "min-speed": 0,
+      "max-speed": 0.025,
+      "color": [0, 0, 0, 0.66]
+    },
+  
+    "mouse-interaction": true,
+    "keep-distance-from-mouse": 0.2,
+    "dynamic-mouse-distance-factor": 0,
+    "offset-bounds":  0.5,
+
+    "MSAA": 2
+  }
+  

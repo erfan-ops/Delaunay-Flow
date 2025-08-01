@@ -1,0 +1,5 @@
+*.vcxproj
+/x64
+/Delaunay-Flow
+/build
+/.vscode
