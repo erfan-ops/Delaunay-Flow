@@ -22,7 +22,7 @@ Delaunay Flow is a visually striking and interactive live desktop wallpaper that
 ## Building
 1. Clone the repository:
    ```bash
-   git clone https://github.com/erfan-ops/CDT.git
+   git clone https://github.com/erfan-ops/Delaunay-Flow.git
    ```
 2. Open the project in Visual Studio 2022.
 3. Build the solution.
