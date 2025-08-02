@@ -22,10 +22,13 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Copy runtime files
+      shell: pwsh
       run: |
-        copy resource\settings.json build\Release\
-        mkdir build\Release\shaders
-        copy shaders\* build\Release\shaders\
+        Copy-Item resource/settings.json -Destination build/Release/ -Force
+        if (-Not (Test-Path 'build/Release/shaders')) {
+          New-Item -ItemType Directory -Path 'build/Release/shaders'
+        }
+        Copy-Item shaders/* -Destination build/Release/shaders/ -Recurse -Force
 
     - name: Upload Executable and Assets
       uses: actions/upload-artifact@v4
@@ -35,3 +38,18 @@ jobs:
           build/Release/Dlaunay-Flow.exe
           build/Release/settings.json
           build/Release/shaders/
+
+    - name: Zip Output
+      shell: cmd
+      run: |
+        mkdir output
+        copy build\Release\Dlaunay-Flow.exe output\
+        copy build\Release\settings.json output\
+        xcopy build\Release\shaders output\shaders\ /E /I /Y
+        powershell -Command "Compress-Archive -Path output\* -DestinationPath Dlaunay-Flow.zip"
+
+    - name: Upload Release Zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: Dlaunay-Flow-Build
+        path: Dlaunay-Flow.zip
