@@ -109,17 +109,6 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 	return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
-// rotates a 2D point relative to another point
-static inline std::pair<float, float> rotate(float x, float y, const float originX, const float originY, const float angle) {
-    x -= originX;
-    y -= originY;
-
-    return {
-        x*std::cos(angle) - y*std::sin(angle) + originX,
-        x*std::sin(angle) + y*std::cos(angle) + originY
-    };
-}
-
 /*
 bool supports_adaptive_sync(GLFWwindow* window) {
     const char* extensions = NULL;
@@ -310,14 +299,26 @@ int main() {
         vertices.emplace_back(x3, y3, color);
     }
 
-    // pre-calculate `TAU_F / settings.stars.segments`
-    float helperFactot = TAU_F / settings.stars.segments;
-
-
     // custom function that inserts the `stars vertices` into the `vertices` array only if `settings.stars.draw` is `true`
     std::function<void()> insertStarsFunc;
 
+    float *xOffsets{0}, *yOffsets{0}, *xAspectRatioCorrectionValues{0};
+
     if (settings.stars.draw) {
+        xOffsets = new float[settings.stars.segments];
+        yOffsets = new float[settings.stars.segments];
+        xAspectRatioCorrectionValues = new float[settings.stars.segments];
+
+        // pre-calculate `TAU_F / settings.stars.segments`
+        float helperFactot = TAU_F / settings.stars.segments;
+
+        for (int i = 0; i < settings.stars.segments; i++) {
+            float angle = i * helperFactot;
+            xOffsets[i] = settings.stars.radius*sin(angle);
+            yOffsets[i] = settings.stars.radius*cos(angle);
+            xAspectRatioCorrectionValues[i] = xOffsets[i] / aspectRatio;
+        }
+
         insertStarsFunc = [&]() {
             for (int i = 0; i < settings.stars.count; i++) {
                 Star& star = stars[i];
@@ -326,15 +327,17 @@ int main() {
                 float centerX = star.getX();
                 float centerY = star.getY();
                 
-                float starTopX = centerX;
-                float starTopY = centerY + radius;
-                
                 for (int j = 0; j < settings.stars.segments; j++) {
-                    auto [x1, y1] = rotate(starTopX, starTopY, centerX, centerY, j * helperFactot);
-                    auto [x2, y2] = rotate(starTopX, starTopY, centerX, centerY, (j+1) * helperFactot);
+                    int j1 = (j+1) % settings.stars.segments;
+
+                    float x1 = centerX + xOffsets[j];
+                    float y1 = centerY + yOffsets[j];
+
+                    float x2 = centerX + xOffsets[j1];
+                    float y2 = centerY + yOffsets[j1];
                     
-                    float correctedX1 = centerX + (x1 - centerX) / aspectRatio;
-                    float correctedX2 = centerX + (x2 - centerX) / aspectRatio;
+                    float correctedX1 = centerX + xAspectRatioCorrectionValues[j];
+                    float correctedX2 = centerX + xAspectRatioCorrectionValues[j1];
                     
                     vertices.emplace_back(centerX, centerY, settings.stars.color);
                     vertices.emplace_back(correctedX1, y1, settings.stars.color);
@@ -549,6 +552,11 @@ int main() {
     free(in.pointlist);
     operator delete[](stars_memory);
     delete[] originalWallpaper;
+    if (settings.stars.draw) {
+        delete[] xOffsets;
+        delete[] yOffsets;
+        delete[] xAspectRatioCorrectionValues;
+    }
 
     glDeleteProgram(shaderProgram);
     glDeleteVertexArrays(1, &VAO);
