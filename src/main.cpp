@@ -330,10 +330,7 @@ int main() {
                 for (int j = 0; j < settings.stars.segments; j++) {
                     int j1 = (j+1) % settings.stars.segments;
 
-                    float x1 = centerX + xOffsets[j];
                     float y1 = centerY + yOffsets[j];
-
-                    float x2 = centerX + xOffsets[j1];
                     float y2 = centerY + yOffsets[j1];
                     
                     float correctedX1 = centerX + xAspectRatioCorrectionValues[j];
