@@ -38,18 +38,3 @@ jobs:
           build/Release/Dlaunay-Flow.exe
           build/Release/settings.json
           build/Release/shaders/
-
-    - name: Zip Output
-      shell: cmd
-      run: |
-        mkdir output
-        copy build\Release\Dlaunay-Flow.exe output\
-        copy build\Release\settings.json output\
-        xcopy build\Release\shaders output\shaders\ /E /I /Y
-        powershell -Command "Compress-Archive -Path output\* -DestinationPath Dlaunay-Flow.zip"
-
-    - name: Upload Release Zip
-      uses: actions/upload-artifact@v4
-      with:
-        name: Dlaunay-Flow-Build
-        path: Dlaunay-Flow.zip
