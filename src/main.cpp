@@ -223,8 +223,10 @@ int main() {
 		Star::moveFunc = &Star::normalMove;
 	}
 
+    const auto starsCount = settings.stars.count;
+
     // reserve memory for stars
-    void* stars_memory = operator new[](settings.stars.count * sizeof(Star));
+    void* stars_memory = operator new[](starsCount * sizeof(Star));
 
     Star* stars = static_cast<Star*>(stars_memory);
 
@@ -240,11 +242,11 @@ int main() {
 	memset(&out, 0, sizeof(out));
 
     // allocating memory for the input
-	in.numberofpoints = settings.stars.count;
+	in.numberofpoints = starsCount;
 	in.pointlist = (double*)malloc(sizeof(double) * in.numberofpoints * 2);
 
     // filling up the input as well as the stars
-	for (int i = 0; i < settings.stars.count; ++i) {
+	for (int i = 0; i < starsCount; ++i) {
 		float x = randomUniform(roffsetBounds, woffsetBounds);
 		float y = randomUniform(roffsetBounds, hoffsetBounds) * aspectRatio;
 		float speed = randomUniform(settings.stars.minSpeed, settings.stars.maxSpeed);
@@ -262,7 +264,7 @@ int main() {
     // getting number of vertices needed to draw the stars
     // `0` if user doesn't want the stars to render
     // otherwise `number of stars * number of segments`
-    const size_t numberOfStarVertices = settings.stars.draw ? settings.stars.count * settings.stars.segments : 0;
+    const size_t numberOfStarVertices = settings.stars.draw ?starsCount * settings.stars.segments : 0;
 
     // reserve memory for the vertices
     std::vector<Vertex> vertices;
@@ -302,12 +304,14 @@ int main() {
     // custom function that inserts the `stars vertices` into the `vertices` array only if `settings.stars.draw` is `true`
     std::function<void()> insertStarsFunc;
 
-    float *xOffsets{0}, *yOffsets{0}, *xAspectRatioCorrectionValues{0};
+    std::unique_ptr<float[]> xOffsets;
+    std::unique_ptr<float[]> yOffsets;
+    std::unique_ptr<float[]> xAspectRatioCorrectionValues;
 
     if (settings.stars.draw) {
-        xOffsets = new float[settings.stars.segments];
-        yOffsets = new float[settings.stars.segments];
-        xAspectRatioCorrectionValues = new float[settings.stars.segments];
+        xOffsets = std::make_unique<float[]>(starsCount);
+        yOffsets = std::make_unique<float[]>(starsCount);
+        xAspectRatioCorrectionValues = std::make_unique<float[]>(starsCount);
 
         // pre-calculate `TAU_F / settings.stars.segments`
         float helperFactot = TAU_F / settings.stars.segments;
@@ -320,7 +324,7 @@ int main() {
         }
 
         insertStarsFunc = [&]() {
-            for (int i = 0; i < settings.stars.count; i++) {
+            for (int i = 0; i < starsCount; i++) {
                 Star& star = stars[i];
                 float radius = settings.stars.radius;
 
@@ -402,7 +406,7 @@ int main() {
 	AddTrayIcon(hwnd, hIcon, L"Just a Simple Icon");
 
     // current wallpaper's path used to set the original wallpaper back when the application is closed
-    wchar_t* originalWallpaper = GetCurrentWallpaper();
+    std::unique_ptr<wchar_t[]> originalWallpaper(GetCurrentWallpaper());
 
     // settings the window as the desktop background
     SetAsDesktop(hwnd);
@@ -444,7 +448,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // moving the stars and updating the triangle input
-        for (int i = 0; i < settings.stars.count; i++) {
+        for (int i = 0; i < starsCount; i++) {
             Star& star = stars[i];
             float mouseDisX = static_cast<float>(mouseX) - star.getX();
             float mouseDisY = static_cast<float>(mouseY) - star.getY();
@@ -539,7 +543,7 @@ int main() {
 
     // reset to the original wallpaper
     SetParent(hwnd, nullptr);
-	SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, (void*)originalWallpaper, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, static_cast<PVOID>(originalWallpaper.get()), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
     // remove tray icon from the system tray menu
     RemoveTrayIcon(hwnd);
@@ -548,12 +552,6 @@ int main() {
     // freeing memory
     free(in.pointlist);
     operator delete[](stars_memory);
-    delete[] originalWallpaper;
-    if (settings.stars.draw) {
-        delete[] xOffsets;
-        delete[] yOffsets;
-        delete[] xAspectRatioCorrectionValues;
-    }
 
     glDeleteProgram(shaderProgram);
     glDeleteVertexArrays(1, &VAO);
