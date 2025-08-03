@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-static std::string readShaderFile(const char* filePath) {
+static std::string readShaderFile(const std::string& filePath) {
     std::ifstream shaderFile;
     shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try {
@@ -19,7 +19,7 @@ static std::string readShaderFile(const char* filePath) {
     }
 }
 
-GLuint shaderUtils::compileShaders(const char* vertexPath, const char* fragmentPath) {
+GLuint shaderUtils::compileShaders(const std::string& vertexPath, const std::string& fragmentPath) {
     // 1. Read shader sources
     std::string vertexCode = readShaderFile(vertexPath);
     std::string fragmentCode = readShaderFile(fragmentPath);
@@ -28,6 +28,7 @@ GLuint shaderUtils::compileShaders(const char* vertexPath, const char* fragmentP
 
     // 2. Compile vertex shader
     GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vShaderCode, nullptr);
     glShaderSource(vertex, 1, &vShaderCode, nullptr);
     glCompileShader(vertex);
     // Check for errors

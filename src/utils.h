@@ -5,5 +5,5 @@
 
 namespace shaderUtils {
     // compiles glsl shaders
-    GLuint compileShaders(const char* vertexPath, const char* fragmentPath);
+    GLuint compileShaders(const std::string& vertexPath, const std::string& fragmentPath);
 }

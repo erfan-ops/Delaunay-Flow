@@ -40,7 +40,7 @@ static float randomUniform(float start, float end) {
 }
 
 // sleeps so that each frame took `stepInterval` seconds to complete
-static inline void gameTick(const float& frameTime, const float& stepInterval, float& fractionalTime) {
+static inline void gameTick(const float frameTime, const float stepInterval, float& fractionalTime) {
 	if (frameTime < stepInterval) {
 		float totalSleepTime = (stepInterval - frameTime) + fractionalTime;
 		int sleepMilliseconds = static_cast<int>(totalSleepTime * 1e+3f);
@@ -191,7 +191,7 @@ int main() {
     SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
 
 
-    using GameTickFunc = void(*)(const float&, const float&, float&);
+    using GameTickFunc = void(*)(const float, const float, float&);
     GameTickFunc tickFunc;
 
     glfwMakeContextCurrent(window);
@@ -199,7 +199,7 @@ int main() {
     // only use gameTick when VSync is false
     if (settings.vsync) {
         glfwSwapInterval(1);
-        tickFunc = [](const float&, const float&, float&) {};
+        tickFunc = [](const float, const float, float&) {};
     } else {
         glfwSwapInterval(0);
         tickFunc = &gameTick;
@@ -227,10 +227,8 @@ int main() {
 
     const auto starsCount = settings.stars.count;
 
-    // reserve memory for stars
-    void* stars_memory = operator new[](starsCount * sizeof(Star));
-
-    Star* stars = static_cast<Star*>(stars_memory);
+    std::vector<Star> stars;
+    stars.reserve(starsCount);
 
     // calculating the offset which stars can go beyond the screen boundaries
     const float offsetBounds = settings.offsetBounds;
@@ -240,24 +238,27 @@ int main() {
 
     std::vector<double> coords;
     coords.resize(starsCount * 2);
+
     // filling up the input as well as the stars
-	for (int i = 0; i < starsCount; ++i) {
+	for (int i = 0; i < starsCount; i++) {
 		float x = randomUniform(roffsetBounds, woffsetBounds);
 		float y = randomUniform(roffsetBounds, hoffsetBounds) * aspectRatio;
 		float speed = randomUniform(settings.stars.minSpeed, settings.stars.maxSpeed);
 		float angle = randomUniform(0, TAU_F);
-		stars[i] = Star(x, y, speed, angle);
+		stars.emplace_back(x, y, speed, angle);
 
 		coords[i * 2] = x;
 		coords[i * 2 + 1] = y;
 	}
 
+    // Delaunay Triangulation
     delaunator::Delaunator d(coords);
 
     // getting number of vertices needed to draw the stars
     // `0` if user doesn't want the stars to render
     // otherwise `number of stars * number of segments`
     const size_t numberOfStarVertices = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
+
 
     // reserve memory for the vertices
     std::vector<Vertex> vertices;
@@ -296,9 +297,9 @@ int main() {
     std::unique_ptr<float[]> xAspectRatioCorrectionValues;
 
     if (settings.stars.draw) {
-        xOffsets = std::make_unique<float[]>(starsCount);
-        yOffsets = std::make_unique<float[]>(starsCount);
-        xAspectRatioCorrectionValues = std::make_unique<float[]>(starsCount);
+        xOffsets = std::make_unique<float[]>(stars.size());
+        yOffsets = std::make_unique<float[]>(stars.size());
+        xAspectRatioCorrectionValues = std::make_unique<float[]>(stars.size());
 
         // pre-calculate `TAU_F / settings.stars.segments`
         float helperFactot = TAU_F / settings.stars.segments;
@@ -311,10 +312,7 @@ int main() {
         }
 
         insertStarsFunc = [&]() {
-            for (int i = 0; i < starsCount; i++) {
-                Star& star = stars[i];
-                float radius = settings.stars.radius;
-
+            for (auto& star : stars) {
                 float centerX = star.getX();
                 float centerY = star.getY();
                 
@@ -419,6 +417,7 @@ int main() {
         oldMouseX = mouseX;
         oldMouseY = mouseY;
         glfwGetCursorPos(window, &mouseX, &mouseY);
+        // linear remapping
         mouseX = mouseX / Width * 2.0f - 1.0f;
         mouseY = -(mouseY / Height * 2.0f - 1.0f);
 
@@ -435,8 +434,8 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         // moving the stars and updating the triangle input
-        for (int i = 0; i < starsCount; i++) {
-            Star& star = stars[i];
+        for (int i = 0; i < stars.size(); i++) {
+            Star& star = stars.at(i);
             float mouseDisX = static_cast<float>(mouseX) - star.getX();
             float mouseDisY = static_cast<float>(mouseY) - star.getY();
             star.move(dt, mouseDisX * aspectRatio, mouseDisY, scale, roffsetBounds, woffsetBounds, roffsetBounds, hoffsetBounds);
@@ -446,7 +445,7 @@ int main() {
 		    coords[i2 + 1] = star.getY();
         }
 
-        // CDT
+        // Delaunay Triangulation
         delaunator::Delaunator d(coords);
 
         // // updating the vertices array
@@ -468,6 +467,7 @@ int main() {
             float y3 = static_cast<float>(d.coords[cIdx + 1]);
     
             float cy = (y1 + y2 + y3) / 3.0f;
+            // linear remapping again
             cy = (cy + 1.0f) * 0.5f;
     
             Color color = interpolateColors(settings.backGroundColors, cy);
@@ -512,9 +512,6 @@ int main() {
     // remove tray icon from the system tray menu
     RemoveTrayIcon(hwnd);
     DestroyIcon(hIcon);
-
-    // freeing memory
-    operator delete[](stars_memory);
 
     glDeleteProgram(shaderProgram);
     glDeleteVertexArrays(1, &VAO);

@@ -1,4 +1,4 @@
-name: Build Delaunay-Flow on Windows
+name: Build Dlaunay-Flow on Windows
 
 on:
   push:
@@ -30,17 +30,11 @@ jobs:
         }
         Copy-Item shaders/* -Destination build/Release/shaders/ -Recurse -Force
 
-    - name: Zip Output
-      shell: cmd
-      run: |
-        mkdir output
-        copy build\Release\Delaunay-Flow.exe output\
-        copy build\Release\settings.json output\
-        xcopy build\Release\shaders output\shaders\ /E /I /Y
-        powershell -Command "Compress-Archive -Path output\* -DestinationPath Delaunay-Flow.zip"
-
-    - name: Upload Release Zip
+    - name: Upload Executable and Assets
       uses: actions/upload-artifact@v4
       with:
-        name: Delaunay-Flow
-        path: Delaunay-Flow.zip
+        name: Dlaunay-Flow
+        path: |
+          build/Release/Dlaunay-Flow.exe
+          build/Release/settings.json
+          build/Release/shaders/

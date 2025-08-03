@@ -16,7 +16,6 @@ private:
 	float speedx;
 	float speedy;
 public:
-	Star(const Star&) = delete;
 	Star(float x, float y, float speed, float angle);
 
 	// Getters
