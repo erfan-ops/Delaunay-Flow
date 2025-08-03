@@ -1,4 +1,4 @@
-name: Build Dlaunay-Flow on Windows
+name: Build Delaunay-Flow on Windows
 
 on:
   push:
@@ -30,11 +30,17 @@ jobs:
         }
         Copy-Item shaders/* -Destination build/Release/shaders/ -Recurse -Force
 
+    - name: Prepare Output
+      shell: cmd
+      run: |
+        mkdir -p Delaunay-Flow\Delaunay-Flow
+        copy build\Release\Delaunay-Flow.exe Delaunay-Flow\Delaunay-Flow\
+        copy build\Release\settings.json Delaunay-Flow\Delaunay-Flow\
+        xcopy build\Release\shaders Delaunay-Flow\Delaunay-Flow\shaders\ /E /I /Y
+      
     - name: Upload Executable and Assets
       uses: actions/upload-artifact@v4
       with:
-        name: Dlaunay-Flow
-        path: |
-          build/Release/Dlaunay-Flow.exe
-          build/Release/settings.json
-          build/Release/shaders/
+        name: Delaunay-Flow
+        path: 
+          Delaunay-Flow/
