@@ -61,7 +61,6 @@ endif()
 # Link libraries
 target_link_libraries(Delaunay-Flow
     opengl32.lib
-    triangle.lib
     glfw3_mt.lib
 )
 

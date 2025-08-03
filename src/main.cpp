@@ -1,12 +1,14 @@
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-
+#define NOMINMAX
 #include <windows.h>
+
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#include <triangle/triangle.h>
+
+#include <delaunator/delaunator.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -53,14 +55,14 @@ static Color interpolateColors(const std::vector<Color>& colors, float t) {
 	if (colors.size() == 1) return colors[0]; // Only 1 color
 
 	// Clamp t to [0, 1]
-	t = max(0.0f, min(1.0f, t));
+	t = std::max(0.0f, std::min(1.0f, t));
 
 	// Calculate segment size (N colors → N-1 segments)
 	float segmentSize = 1.0f / (colors.size() - 1);
 
 	// Find the two closest colors
 	int index = static_cast<int>(t / segmentSize);
-	index = min(index, static_cast<int>(colors.size()) - 2); // Prevent overflow
+	index = std::min(index, static_cast<int>(colors.size()) - 2); // Prevent overflow
 
 	// Compute local interpolation weight (0 ≤ local_t ≤ 1)
 	float local_t = (t - index * segmentSize) / segmentSize;
@@ -236,15 +238,8 @@ int main() {
 	const float woffsetBounds = offsetBounds + 1.0f;
 	const float hoffsetBounds = (offsetBounds + 1.0f) * aspectRatio;
 
-    // initiating triangulate stuff
-    triangulateio in, out;
-	memset(&in, 0, sizeof(in));
-	memset(&out, 0, sizeof(out));
-
-    // allocating memory for the input
-	in.numberofpoints = starsCount;
-	in.pointlist = (double*)malloc(sizeof(double) * in.numberofpoints * 2);
-
+    std::vector<double> coords;
+    coords.resize(starsCount * 2);
     // filling up the input as well as the stars
 	for (int i = 0; i < starsCount; ++i) {
 		float x = randomUniform(roffsetBounds, woffsetBounds);
@@ -253,49 +248,41 @@ int main() {
 		float angle = randomUniform(0, TAU_F);
 		stars[i] = Star(x, y, speed, angle);
 
-		in.pointlist[i * 2] = x;
-		in.pointlist[i * 2 + 1] = y;
+		coords[i * 2] = x;
+		coords[i * 2 + 1] = y;
 	}
 
-    // Constrained Delaunay Triangulation
-	char* mode = (char*)"zQ";
-	triangulate(mode, &in, &out, nullptr);
+    delaunator::Delaunator d(coords);
 
     // getting number of vertices needed to draw the stars
     // `0` if user doesn't want the stars to render
     // otherwise `number of stars * number of segments`
-    const size_t numberOfStarVertices = settings.stars.draw ?starsCount * settings.stars.segments : 0;
+    const size_t numberOfStarVertices = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
 
     // reserve memory for the vertices
     std::vector<Vertex> vertices;
-    vertices.reserve((out.numberoftriangles + numberOfStarVertices) * 3);
+    vertices.reserve(d.triangles.size() + numberOfStarVertices);
 
     // filling the vertices
-    for (int i = 0; i < out.numberoftriangles; i++) {
-        int bIdx = i * 3;
+    for (int i = 0; i < d.triangles.size(); i+=3) {
+        size_t aIdx = 2 * d.triangles[i];
+        size_t bIdx = 2 * d.triangles[i + 1];
+        size_t cIdx = 2 * d.triangles[i + 2];
 
-        int ia = out.trianglelist[bIdx];
-        int ib = out.trianglelist[bIdx + 1];
-        int ic = out.trianglelist[bIdx + 2];
+        float x1 = static_cast<float>(d.coords[aIdx]);
+        float y1 = static_cast<float>(d.coords[aIdx + 1]);
 
-        int pa = ia * 2;
-        int pb = ib * 2;
-        int pc = ic * 2;
+        float x2 = static_cast<float>(d.coords[bIdx]);
+        float y2 = static_cast<float>(d.coords[bIdx + 1]);
 
-        float x1 = static_cast<float>(out.pointlist[pa]);
-        float y1 = static_cast<float>(out.pointlist[pa + 1]);
-
-        float x2 = static_cast<float>(out.pointlist[pb]);
-        float y2 = static_cast<float>(out.pointlist[pb + 1]);
-
-        float x3 = static_cast<float>(out.pointlist[pc]);
-        float y3 = static_cast<float>(out.pointlist[pc + 1]);
+        float x3 = static_cast<float>(d.coords[cIdx]);
+        float y3 = static_cast<float>(d.coords[cIdx + 1]);
 
         float cy = (y1 + y2 + y3) / 3.0f;
         cy = (cy + 1.0f) * 0.5f;
 
         Color color = interpolateColors(settings.backGroundColors, cy);
-
+        
         vertices.emplace_back(x1, y1, color);
         vertices.emplace_back(x2, y2, color);
         vertices.emplace_back(x3, y3, color);
@@ -454,49 +441,43 @@ int main() {
             float mouseDisY = static_cast<float>(mouseY) - star.getY();
             star.move(dt, mouseDisX * aspectRatio, mouseDisY, scale, roffsetBounds, woffsetBounds, roffsetBounds, hoffsetBounds);
 
-            in.pointlist[i * 2] = star.getX();
-		    in.pointlist[i * 2 + 1] = star.getY();
+            int i2 = i * 2;
+            coords[i2] = star.getX();
+		    coords[i2 + 1] = star.getY();
         }
 
         // CDT
-        triangulate(mode, &in, &out, nullptr);
+        delaunator::Delaunator d(coords);
 
-        // updating the vertices array
+        // // updating the vertices array
         vertices.clear();
-        vertices.reserve((out.numberoftriangles + numberOfStarVertices) * 3);
+        vertices.reserve(d.triangles.size() + numberOfStarVertices);
 
-        for (int i = 0; i < out.numberoftriangles; i++) {
-            int bIdx = i * 3;
-
-            int ia = out.trianglelist[bIdx];
-            int ib = out.trianglelist[bIdx + 1];
-            int ic = out.trianglelist[bIdx + 2];
-
-            int pa = ia * 2;
-            int pb = ib * 2;
-            int pc = ic * 2;
-
-            float x1 = static_cast<float>(out.pointlist[pa]);
-            float y1 = static_cast<float>(out.pointlist[pa + 1]);
-
-            float x2 = static_cast<float>(out.pointlist[pb]);
-            float y2 = static_cast<float>(out.pointlist[pb + 1]);
-
-            float x3 = static_cast<float>(out.pointlist[pc]);
-            float y3 = static_cast<float>(out.pointlist[pc + 1]);
-
+        for (int i = 0; i < d.triangles.size(); i+=3) {
+            size_t aIdx = 2 * d.triangles[i];
+            size_t bIdx = 2 * d.triangles[i + 1];
+            size_t cIdx = 2 * d.triangles[i + 2];
+    
+            float x1 = static_cast<float>(d.coords[aIdx]);
+            float y1 = static_cast<float>(d.coords[aIdx + 1]);
+    
+            float x2 = static_cast<float>(d.coords[bIdx]);
+            float y2 = static_cast<float>(d.coords[bIdx + 1]);
+    
+            float x3 = static_cast<float>(d.coords[cIdx]);
+            float y3 = static_cast<float>(d.coords[cIdx + 1]);
+    
             float cy = (y1 + y2 + y3) / 3.0f;
             cy = (cy + 1.0f) * 0.5f;
-
-            // calculating the color based on the coordinate of the triangle
+    
             Color color = interpolateColors(settings.backGroundColors, cy);
-
+            
             vertices.emplace_back(x1, y1, color);
             vertices.emplace_back(x2, y2, color);
             vertices.emplace_back(x3, y3, color);
         }
 
-        // insertings the stars vertices
+        // // insertings the stars vertices
         insertStarsFunc();
 
         // copying the data into the VBO
@@ -521,23 +502,6 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        // freeing c allocated stuff
-        if (out.pointlist)             free(out.pointlist);
-        if (out.pointattributelist)    free(out.pointattributelist);
-        if (out.pointmarkerlist)       free(out.pointmarkerlist);
-        if (out.trianglelist)          free(out.trianglelist);
-        if (out.triangleattributelist) free(out.triangleattributelist);
-        if (out.trianglearealist)      free(out.trianglearealist);
-        if (out.neighborlist)          free(out.neighborlist);
-        if (out.segmentlist)           free(out.segmentlist);
-        if (out.segmentmarkerlist)     free(out.segmentmarkerlist);
-        if (out.holelist)              free(out.holelist);
-        if (out.regionlist)            free(out.regionlist);
-        if (out.edgelist)              free(out.edgelist);
-        if (out.edgemarkerlist)        free(out.edgemarkerlist);
-        if (out.normlist)              free(out.normlist);
-        memset(&out, 0, sizeof(out));
-
         tickFunc(dt, stepInterval, fractionalTime);
     }
 
@@ -550,7 +514,6 @@ int main() {
     DestroyIcon(hIcon);
 
     // freeing memory
-    free(in.pointlist);
     operator delete[](stars_memory);
 
     glDeleteProgram(shaderProgram);
