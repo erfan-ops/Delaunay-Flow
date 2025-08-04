@@ -232,17 +232,20 @@ int main() {
 
     // calculating the offset which stars can go beyond the screen boundaries
     const float offsetBounds = settings.offsetBounds;
-	const float roffsetBounds = -offsetBounds - 1.0f;
-	const float woffsetBounds = offsetBounds + 1.0f;
-	const float hoffsetBounds = (offsetBounds + 1.0f) * aspectRatio;
+
+    const float leftBound = (-offsetBounds - 1.0f) * aspectRatio;
+    const float rightBound = (offsetBounds + 1.0f) * aspectRatio;
+
+    const float bottomBound = -offsetBounds - 1.0f;
+    const float topBound = offsetBounds + 1.0f;
 
     std::vector<double> coords;
     coords.resize(starsCount * 2);
 
     // filling up the input as well as the stars
 	for (int i = 0; i < starsCount; i++) {
-		float x = randomUniform(roffsetBounds, woffsetBounds);
-		float y = randomUniform(roffsetBounds, hoffsetBounds) * aspectRatio;
+		float x = randomUniform(leftBound, rightBound);
+		float y = randomUniform(bottomBound, topBound);
 		float speed = randomUniform(settings.stars.minSpeed, settings.stars.maxSpeed);
 		float angle = randomUniform(0, TAU_F);
 		stars.emplace_back(x, y, speed, angle);
@@ -317,7 +320,7 @@ int main() {
             float angle = i * helperFactot;
             xOffsets[i] = settings.stars.radius*sin(angle);
             yOffsets[i] = settings.stars.radius*cos(angle);
-            xAspectRatioCorrectionValues[i] = xOffsets[i] / aspectRatio;
+            xAspectRatioCorrectionValues[i] = xOffsets[i];
         }
 
         insertStarsFunc = [&]() {
@@ -363,14 +366,13 @@ int main() {
                     float y2 = static_cast<float>(d.coords[2 * ib + 1]);
             
                     // aspect ratio correction
-                    float dx = (x2 - x1) * aspectRatio;
+                    float dx = (x2 - x1);
                     float dy = y2 - y1;
                     float length = std::sqrt(dx * dx + dy * dy);
             
                     if (length != 0.0f) {
                         float nx = -dy / length;
                         float ny = dx / length;
-                        nx /= aspectRatio;
             
                         float rx1 = x1 + nx * halfWidth;
                         float ry1 = y1 + ny * halfWidth;
@@ -440,6 +442,10 @@ int main() {
         std::cerr << "Failed to compile shaders!" << std::endl;
         return -1;
     }
+    GLint aspectRatioLocation = glGetUniformLocation(shaderProgram, "aspectRatio");
+    glUseProgram(shaderProgram);
+    glUniform1f(aspectRatioLocation, aspectRatio);
+    glUseProgram(0);
 
     // variables to store the mouse position
     double mouseX, mouseY;
@@ -484,7 +490,7 @@ int main() {
         oldMouseY = mouseY;
         glfwGetCursorPos(window, &mouseX, &mouseY);
         // linear remapping
-        mouseX = mouseX / Width * 2.0f - 1.0f;
+        mouseX = (mouseX / Width * 2.0f - 1.0f) * aspectRatio;
         mouseY = -(mouseY / Height * 2.0f - 1.0f);
 
         // calculating how much the area around the mouse should expand depending on its speed
@@ -504,7 +510,7 @@ int main() {
             Star& star = stars.at(i);
             float mouseDisX = static_cast<float>(mouseX) - star.getX();
             float mouseDisY = static_cast<float>(mouseY) - star.getY();
-            star.move(dt, mouseDisX * aspectRatio, mouseDisY, scale, roffsetBounds, woffsetBounds, roffsetBounds, hoffsetBounds);
+            star.move(dt, mouseDisX, mouseDisY, scale, leftBound, rightBound, bottomBound, topBound);
 
             int i2 = i * 2;
             coords[i2] = star.getX();

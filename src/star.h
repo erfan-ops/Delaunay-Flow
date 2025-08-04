@@ -22,9 +22,9 @@ public:
 	float getX() {return this->x;}
 	float getY() {return this->y;}
 
-	void move(const float dt, const float mouseDistanceX, const float mouseDistanceY, const float scale, const float leftBound, const float rightBound, const float topBound, const float bottomBound) noexcept;
-	void moveWithMouse(const float dt, const float mouseDistanceX, const float mouseDistanceY, const float scale, const float leftBound, const float rightBound, const float topBound, const float bottomBound) noexcept;
-	void normalMove(const float dt, const float mouseDistanceX, const float mouseDistanceY, const float scale, const float leftBound, const float rightBound, const float topBound, const float bottomBound) noexcept;
+	void move(const float dt, const float mouseDistanceX, const float mouseDistanceY, const float scale, const float leftBound, const float rightBound, const float bottomBound, const float topBound) noexcept;
+	void moveWithMouse(const float dt, const float mouseDistanceX, const float mouseDistanceY, const float scale, const float leftBound, const float rightBound, const float bottomBound, const float topBound) noexcept;
+	void normalMove(const float dt, const float mouseDistanceX, const float mouseDistanceY, const float scale, const float leftBound, const float rightBound, const float bottomBound, const float topBound) noexcept;
 	static void (Star::* moveFunc)(const float, const float, const float, const float, const float, const float, const float, const float) noexcept;
 
 };
