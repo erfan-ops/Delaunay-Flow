@@ -17,10 +17,6 @@
 #include <cmath>
 #include <functional>
 
-#include <fstream>
-#include <sstream>
-#include <string>
-
 #include "star.h"
 #include "desktopUtils.h"
 #include "trayUtils.h"
@@ -161,6 +157,10 @@ struct Vertex {
     Vertex(float x, float y, Color color) : x(x), y(y), r(color[0]), g(color[1]), b(color[2]), a(color[3]) {}
 };
 
+inline size_t nextHalfedge(size_t e) {
+    return (e % 3 == 2) ? e - 2 : e + 1;
+}
+
 
 int main() {
     glfwInit();
@@ -258,11 +258,20 @@ int main() {
     // `0` if user doesn't want the stars to render
     // otherwise `number of stars * number of segments`
     const size_t numberOfStarVertices = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
+    
+    size_t uniqueEdgeCount = 0;
+    for (size_t i = 0; i < d.halfedges.size(); ++i) {
+        size_t j = d.halfedges[i];
+        if (j != -1 && i < static_cast<size_t>(j)) {
+            ++uniqueEdgeCount;
+        }
+    }
+    size_t numberOfLineVertices = settings.drawLines ? uniqueEdgeCount * 6 : 0;
 
 
     // reserve memory for the vertices
     std::vector<Vertex> vertices;
-    vertices.reserve(d.triangles.size() + numberOfStarVertices);
+    vertices.reserve(d.triangles.size() + numberOfStarVertices + numberOfLineVertices);
 
     // filling the vertices
     for (int i = 0; i < d.triangles.size(); i+=3) {
@@ -335,7 +344,64 @@ int main() {
         insertStarsFunc = []() {};
     }
 
+
+    std::function<void(delaunator::Delaunator&)> insertLinesFunc;
+    float halfWidth = settings.lineWidth * 0.5f;
+
+    if (settings.drawLines) {
+        insertLinesFunc = [&](delaunator::Delaunator& d) {
+            for (size_t i = 0; i < d.halfedges.size(); ++i) {
+                size_t j = d.halfedges[i];
+                if (j != -1 && i < j) { // i < j avoids duplicate edges
+                    size_t ia = d.triangles[i];
+                    size_t ib = d.triangles[nextHalfedge(i)];
+            
+                    float x1 = static_cast<float>(d.coords[2 * ia]);
+                    float y1 = static_cast<float>(d.coords[2 * ia + 1]);
+            
+                    float x2 = static_cast<float>(d.coords[2 * ib]);
+                    float y2 = static_cast<float>(d.coords[2 * ib + 1]);
+            
+                    // aspect ratio correction
+                    float dx = (x2 - x1) * aspectRatio;
+                    float dy = y2 - y1;
+                    float length = std::sqrt(dx * dx + dy * dy);
+            
+                    if (length != 0.0f) {
+                        float nx = -dy / length;
+                        float ny = dx / length;
+                        nx /= aspectRatio;
+            
+                        float rx1 = x1 + nx * halfWidth;
+                        float ry1 = y1 + ny * halfWidth;
+            
+                        float rx2 = x1 - nx * halfWidth;
+                        float ry2 = y1 - ny * halfWidth;
+            
+                        float rx3 = x2 - nx * halfWidth;
+                        float ry3 = y2 - ny * halfWidth;
+            
+                        float rx4 = x2 + nx * halfWidth;
+                        float ry4 = y2 + ny * halfWidth;
+            
+                        // Two triangles per thick line
+                        vertices.emplace_back(rx1, ry1, settings.linesColor);
+                        vertices.emplace_back(rx2, ry2, settings.linesColor);
+                        vertices.emplace_back(rx3, ry3, settings.linesColor);
+            
+                        vertices.emplace_back(rx4, ry4, settings.linesColor);
+                        vertices.emplace_back(rx3, ry3, settings.linesColor);
+                        vertices.emplace_back(rx1, ry1, settings.linesColor);
+                    }
+                }
+            }
+        };
+    } else {
+        insertLinesFunc = [](delaunator::Delaunator&) {};
+    }
+
     insertStarsFunc();
+    insertLinesFunc(d);
 
     // initiating VAO and VBO
     GLuint VAO, VBO;
@@ -448,9 +514,18 @@ int main() {
         // Delaunay Triangulation
         delaunator::Delaunator d(coords);
 
+        uniqueEdgeCount = 0;
+        for (size_t i = 0; i < d.halfedges.size(); ++i) {
+            size_t j = d.halfedges[i];
+            if (j != -1 && i < static_cast<size_t>(j)) {
+                ++uniqueEdgeCount;
+            }
+        }
+        size_t numberOfLineVertices = settings.drawLines ? uniqueEdgeCount * 6 : 0;
+
         // // updating the vertices array
         vertices.clear();
-        vertices.reserve(d.triangles.size() + numberOfStarVertices);
+        vertices.reserve(d.triangles.size() + numberOfStarVertices + numberOfLineVertices);
 
         for (int i = 0; i < d.triangles.size(); i+=3) {
             size_t aIdx = 2 * d.triangles[i];
@@ -479,6 +554,7 @@ int main() {
 
         // // insertings the stars vertices
         insertStarsFunc();
+        insertLinesFunc(d);
 
         // copying the data into the VBO
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -502,6 +578,7 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
 
+        // gameTick(dt, stepInterval, fractionalTime);
         tickFunc(dt, stepInterval, fractionalTime);
     }
 

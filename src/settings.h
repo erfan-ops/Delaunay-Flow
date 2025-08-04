@@ -22,6 +22,10 @@ struct Settings {
 		Color color;
 	} stars;
 
+	bool drawLines;
+	float lineWidth;
+	Color linesColor;
+
 	bool moveFromMouse;
 	float mouseDistance;
 	float speedBasedMouseDistanceMultiplier;

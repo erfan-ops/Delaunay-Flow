@@ -23,6 +23,10 @@ Settings loadSettings(const std::string& filename) {
 	settings.stars.maxSpeed = j["stars"]["max-speed"];
 	settings.stars.color = j["stars"]["color"].get<Color>();
 
+	settings.drawLines = j["draw-lines"];
+	settings.lineWidth = j["line-width"];
+	settings.linesColor = j["lines-color"].get<Color>();
+
 	settings.moveFromMouse = j["mouse-interaction"];
 	settings.mouseDistance = j["keep-distance-from-mouse"];
 	settings.speedBasedMouseDistanceMultiplier = j["dynamic-mouse-distance-factor"];
