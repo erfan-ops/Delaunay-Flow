@@ -29,6 +29,9 @@ struct Settings {
 	bool moveFromMouse;
 	float mouseDistance;
 	float speedBasedMouseDistanceMultiplier;
+	bool drawMouseBarrier;
+	Color mouseBarrierColor;
+
 	float offsetBounds;
 
 	int MSAA;

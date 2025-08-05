@@ -26,6 +26,10 @@
     "mouse-interaction": true,
     "keep-distance-from-mouse": 0.2,
     "dynamic-mouse-distance-factor": 0,
+
+    "draw-mouse-barrier": false,
+    "mouse-barrier-color": [1.0, 1.0, 1.0, 0.3],
+
     "offset-bounds": 0.25,
 
     "MSAA": 2

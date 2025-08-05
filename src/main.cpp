@@ -402,8 +402,8 @@ int main() {
         insertLinesFunc = [](delaunator::Delaunator&) {};
     }
 
-    insertStarsFunc();
     insertLinesFunc(d);
+    insertStarsFunc();
 
     // initiating VAO and VBO
     GLuint VAO, VBO;
@@ -443,13 +443,37 @@ int main() {
         return -1;
     }
     GLint aspectRatioLocation = glGetUniformLocation(shaderProgram, "aspectRatio");
+    GLint mousePosLocation = glGetUniformLocation(shaderProgram, "mousePos");
+    GLint mouseDistLocation = glGetUniformLocation(shaderProgram, "mouseDist");
+    GLint mouseDistSqrLocation = glGetUniformLocation(shaderProgram, "mouseDistSqr");
+    GLint displayBoundsLocation = glGetUniformLocation(shaderProgram, "displayBounds");
+    GLint mouseBarrierColorLocation = glGetUniformLocation(shaderProgram, "mouseBarrierColor");
+
     glUseProgram(shaderProgram);
+
     glUniform1f(aspectRatioLocation, aspectRatio);
+    float mouseDistNDC = settings.mouseDistance * Height / 2.0f;
+    glUniform1f(mouseDistLocation, mouseDistNDC);
+    glUniform1f(mouseDistSqrLocation, mouseDistNDC * mouseDistNDC);
+    glUniform2f(displayBoundsLocation, static_cast<float>(Width), static_cast<float>(Height));
+    if (settings.drawMouseBarrier) {
+        glUniform4f(
+            mouseBarrierColorLocation,
+            settings.mouseBarrierColor[0],
+            settings.mouseBarrierColor[1],
+            settings.mouseBarrierColor[2],
+            settings.mouseBarrierColor[3]
+        );
+    } else {
+        glUniform4f(mouseBarrierColorLocation, 0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
     glUseProgram(0);
 
     // variables to store the mouse position
     double mouseX, mouseY;
-    double oldMouseX, oldMouseY;
+    double mouseXNDC, mouseYNDC;
+    double oldMouseXNDC, oldMouseYNDC;
 
     // interval between frames (useless if vsync is on)
     const float stepInterval = 1.0f / settings.targetFPS;
@@ -471,8 +495,8 @@ int main() {
     glfwShowWindow(window);
 
     glfwGetCursorPos(window, &mouseX, &mouseY);
-    mouseX = mouseX / Width * 2.0f - 1.0f;
-    mouseY = -(mouseY / Height * 2.0f - 1.0f);
+    mouseXNDC = mouseX / Width * 2.0f - 1.0f;
+    mouseYNDC = -(mouseY / Height * 2.0f - 1.0f);
 
     // timestamps to keep track of delta-time
     auto newF = std::chrono::high_resolution_clock::now();
@@ -486,16 +510,16 @@ int main() {
 		dt = std::chrono::duration<float>(newF - oldF).count();
 
         // getting the mouse position
-        oldMouseX = mouseX;
-        oldMouseY = mouseY;
+        oldMouseXNDC = mouseXNDC;
+        oldMouseYNDC = mouseYNDC;
         glfwGetCursorPos(window, &mouseX, &mouseY);
         // linear remapping
-        mouseX = (mouseX / Width * 2.0f - 1.0f) * aspectRatio;
-        mouseY = -(mouseY / Height * 2.0f - 1.0f);
+        mouseXNDC = (mouseX / Width * 2.0f - 1.0f) * aspectRatio;
+        mouseYNDC = -(mouseY / Height * 2.0f - 1.0f);
 
         // calculating how much the area around the mouse should expand depending on its speed
-        float mdxm = static_cast<float>(std::abs(mouseX - oldMouseX));
-        float mdym = static_cast<float>(std::abs(mouseY - oldMouseY));
+        float mdxm = static_cast<float>(std::abs(mouseXNDC - oldMouseXNDC));
+        float mdym = static_cast<float>(std::abs(mouseYNDC - oldMouseYNDC));
         float mdm = std::sqrt(mdxm*mdxm + mdym*mdym);
         // float mdm = mdxm*mdxm + mdym*mdym;
         // float mdm = std::log(mdxm*mdxm + mdym*mdym);
@@ -508,8 +532,8 @@ int main() {
         // moving the stars and updating the triangle input
         for (int i = 0; i < stars.size(); i++) {
             Star& star = stars.at(i);
-            float mouseDisX = static_cast<float>(mouseX) - star.getX();
-            float mouseDisY = static_cast<float>(mouseY) - star.getY();
+            float mouseDisX = static_cast<float>(mouseXNDC) - star.getX();
+            float mouseDisY = static_cast<float>(mouseYNDC) - star.getY();
             star.move(dt, mouseDisX, mouseDisY, scale, leftBound, rightBound, bottomBound, topBound);
 
             int i2 = i * 2;
@@ -558,9 +582,9 @@ int main() {
             vertices.emplace_back(x3, y3, color);
         }
 
-        // // insertings the stars vertices
-        insertStarsFunc();
+        // inserting the stars vertices
         insertLinesFunc(d);
+        insertStarsFunc();
 
         // copying the data into the VBO
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -572,6 +596,7 @@ int main() {
         );
         
         glUseProgram(shaderProgram);
+        glUniform2f(mousePosLocation, static_cast<float>(mouseX), static_cast<float>(mouseY));
         
         // actual drawing
         glBindVertexArray(VAO);
