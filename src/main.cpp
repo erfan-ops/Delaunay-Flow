@@ -448,6 +448,7 @@ int main() {
     GLint mouseDistSqrLocation = glGetUniformLocation(shaderProgram, "mouseDistSqr");
     GLint displayBoundsLocation = glGetUniformLocation(shaderProgram, "displayBounds");
     GLint mouseBarrierColorLocation = glGetUniformLocation(shaderProgram, "mouseBarrierColor");
+    GLint mouseBarrierBlurLocation = glGetUniformLocation(shaderProgram, "mouseBarrierBlur");
 
     glUseProgram(shaderProgram);
 
@@ -456,6 +457,8 @@ int main() {
     glUniform1f(mouseDistLocation, mouseDistNDC);
     glUniform1f(mouseDistSqrLocation, mouseDistNDC * mouseDistNDC);
     glUniform2f(displayBoundsLocation, static_cast<float>(Width), static_cast<float>(Height));
+    glUniform1f(mouseBarrierBlurLocation, settings.mouseBarrierBlur);
+
     if (settings.drawMouseBarrier) {
         glUniform4f(
             mouseBarrierColorLocation,

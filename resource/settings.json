@@ -1,8 +1,9 @@
 {
     "fps": 120,
-    "vsync": true,
+    "vsync": false,
 
     "background-colors": [
+      [ 0.28, 0.09, 0.65, 1 ],
       [ 0.98, 0.33, 0.33, 1 ],
       [ 0.98, 0.55, 0.15, 1 ],
       [ 0.96, 0.82, 0.2, 1 ],
@@ -13,25 +14,26 @@
       "draw-stars": false,
       "segments": 12,
       "radius": 0.01,
-      "count": 200,
-      "min-speed": 0,
-      "max-speed": 0.025,
+      "count": 150,
+      "min-speed": 0.005,
+      "max-speed": 0.026,
       "color": [ 0, 0, 0, 0.66 ]
     },
 
     "draw-lines": true,
-    "line-width": 0.005,
-    "lines-color": [ 0, 0, 0, 1 ],
+    "line-width": 0.0038,
+    "lines-color": [ 0, 0, 0, 0.69 ],
   
     "mouse-interaction": true,
-    "keep-distance-from-mouse": 0.2,
+    "keep-distance-from-mouse": 0.25,
     "dynamic-mouse-distance-factor": 0,
 
-    "draw-mouse-barrier": false,
-    "mouse-barrier-color": [1.0, 1.0, 1.0, 0.3],
+    "draw-mouse-barrier": true,
+    "mouse-barrier-color": [ 0.2, 0.05, 0.7, 0.3 ],
+    "mouse-barrier-blur": 25,
 
-    "offset-bounds": 0.25,
+    "offset-bounds": 0.3,
 
-    "MSAA": 2
+    "MSAA": 4
   }
   

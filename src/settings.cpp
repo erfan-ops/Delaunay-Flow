@@ -30,8 +30,10 @@ Settings loadSettings(const std::string& filename) {
 	settings.moveFromMouse = j["mouse-interaction"];
 	settings.mouseDistance = j["keep-distance-from-mouse"];
 	settings.speedBasedMouseDistanceMultiplier = j["dynamic-mouse-distance-factor"];
+
 	settings.drawMouseBarrier = j["draw-mouse-barrier"];
 	settings.mouseBarrierColor = j["mouse-barrier-color"].get<Color>();
+	settings.mouseBarrierBlur = j["mouse-barrier-blur"];
 
 	settings.offsetBounds = j["offset-bounds"];
 
