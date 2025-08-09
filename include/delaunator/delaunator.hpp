@@ -17,103 +17,103 @@ inline size_t fast_mod(const size_t i, const size_t c) {
 }
 
 // Kahan and Babuska summation, Neumaier variant; accumulates less FP error
-inline double sum(const std::vector<double>& x) {
-    double sum = x[0];
-    double err = 0.0;
+inline float sum(const std::vector<float>& x) {
+    float sum = x[0];
+    float err = 0.0f;
 
     for (size_t i = 1; i < x.size(); i++) {
-        const double k = x[i];
-        const double m = sum + k;
+        const float k = x[i];
+        const float m = sum + k;
         err += std::fabs(sum) >= std::fabs(k) ? sum - m + k : k - m + sum;
         sum = m;
     }
     return sum + err;
 }
 
-inline double dist(
-    const double ax,
-    const double ay,
-    const double bx,
-    const double by) {
-    const double dx = ax - bx;
-    const double dy = ay - by;
+inline float dist(
+    const float ax,
+    const float ay,
+    const float bx,
+    const float by) {
+    const float dx = ax - bx;
+    const float dy = ay - by;
     return dx * dx + dy * dy;
 }
 
-inline double circumradius(
-    const double ax,
-    const double ay,
-    const double bx,
-    const double by,
-    const double cx,
-    const double cy) {
-    const double dx = bx - ax;
-    const double dy = by - ay;
-    const double ex = cx - ax;
-    const double ey = cy - ay;
+inline float circumradius(
+    const float ax,
+    const float ay,
+    const float bx,
+    const float by,
+    const float cx,
+    const float cy) {
+    const float dx = bx - ax;
+    const float dy = by - ay;
+    const float ex = cx - ax;
+    const float ey = cy - ay;
 
-    const double bl = dx * dx + dy * dy;
-    const double cl = ex * ex + ey * ey;
-    const double d = dx * ey - dy * ex;
+    const float bl = dx * dx + dy * dy;
+    const float cl = ex * ex + ey * ey;
+    const float d = dx * ey - dy * ex;
 
-    const double x = (ey * bl - dy * cl) * 0.5 / d;
-    const double y = (dx * cl - ex * bl) * 0.5 / d;
+    const float x = (ey * bl - dy * cl) * 0.5f / d;
+    const float y = (dx * cl - ex * bl) * 0.5f / d;
 
-    if ((bl > 0.0 || bl < 0.0) && (cl > 0.0 || cl < 0.0) && (d > 0.0 || d < 0.0)) {
+    if ((bl > 0.0f || bl < 0.0f) && (cl > 0.0f || cl < 0.0f) && (d > 0.0f || d < 0.0f)) {
         return x * x + y * y;
     } else {
-        return std::numeric_limits<double>::max();
+        return std::numeric_limits<float>::max();
     }
 }
 
 inline bool orient(
-    const double px,
-    const double py,
-    const double qx,
-    const double qy,
-    const double rx,
-    const double ry) {
-    return (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0.0;
+    const float px,
+    const float py,
+    const float qx,
+    const float qy,
+    const float rx,
+    const float ry) {
+    return (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0.0f;
 }
 
-inline std::pair<double, double> circumcenter(
-    const double ax,
-    const double ay,
-    const double bx,
-    const double by,
-    const double cx,
-    const double cy) {
-    const double dx = bx - ax;
-    const double dy = by - ay;
-    const double ex = cx - ax;
-    const double ey = cy - ay;
+inline std::pair<float, float> circumcenter(
+    const float ax,
+    const float ay,
+    const float bx,
+    const float by,
+    const float cx,
+    const float cy) {
+    const float dx = bx - ax;
+    const float dy = by - ay;
+    const float ex = cx - ax;
+    const float ey = cy - ay;
 
-    const double bl = dx * dx + dy * dy;
-    const double cl = ex * ex + ey * ey;
-    const double d = dx * ey - dy * ex;
+    const float bl = dx * dx + dy * dy;
+    const float cl = ex * ex + ey * ey;
+    const float d = dx * ey - dy * ex;
 
-    const double x = ax + (ey * bl - dy * cl) * 0.5 / d;
-    const double y = ay + (dx * cl - ex * bl) * 0.5 / d;
+    const float x = ax + (ey * bl - dy * cl) * 0.5f / d;
+    const float y = ay + (dx * cl - ex * bl) * 0.5f / d;
 
     return std::make_pair(x, y);
 }
 
 struct compare {
 
-    std::vector<double> const& coords;
-    double cx;
-    double cy;
+    std::vector<float> const& coords;
+    float cx;
+    float cy;
 
     bool operator()(std::size_t i, std::size_t j) {
-        const double d1 = dist(coords[2 * i], coords[2 * i + 1], cx, cy);
-        const double d2 = dist(coords[2 * j], coords[2 * j + 1], cx, cy);
-        const double diff1 = d1 - d2;
-        const double diff2 = coords[2 * i] - coords[2 * j];
-        const double diff3 = coords[2 * i + 1] - coords[2 * j + 1];
+        const float d1 = dist(coords[2 * i], coords[2 * i + 1], cx, cy);
+        const float d2 = dist(coords[2 * j], coords[2 * j + 1], cx, cy);
+        const float diff1 = d1 - d2;
+        const float diff2 = coords[2 * i] - coords[2 * j];
+        const float diff3 = coords[2 * i + 1] - coords[2 * j + 1];
 
-        if (diff1 > 0.0 || diff1 < 0.0) {
+        if (diff1 > 0.0f || diff1 < 0.0f) {
             return diff1 < 0;
-        } else if (diff2 > 0.0 || diff2 < 0.0) {
+        } else if (diff2 > 0.0f || diff2 < 0.0f) {
             return diff2 < 0;
         } else {
             return diff3 < 0;
@@ -122,48 +122,48 @@ struct compare {
 };
 
 inline bool in_circle(
-    const double ax,
-    const double ay,
-    const double bx,
-    const double by,
-    const double cx,
-    const double cy,
-    const double px,
-    const double py) {
-    const double dx = ax - px;
-    const double dy = ay - py;
-    const double ex = bx - px;
-    const double ey = by - py;
-    const double fx = cx - px;
-    const double fy = cy - py;
+    const float ax,
+    const float ay,
+    const float bx,
+    const float by,
+    const float cx,
+    const float cy,
+    const float px,
+    const float py) {
+    const float dx = ax - px;
+    const float dy = ay - py;
+    const float ex = bx - px;
+    const float ey = by - py;
+    const float fx = cx - px;
+    const float fy = cy - py;
 
-    const double ap = dx * dx + dy * dy;
-    const double bp = ex * ex + ey * ey;
-    const double cp = fx * fx + fy * fy;
+    const float ap = dx * dx + dy * dy;
+    const float bp = ex * ex + ey * ey;
+    const float cp = fx * fx + fy * fy;
 
     return (dx * (ey * cp - bp * fy) -
             dy * (ex * cp - bp * fx) +
-            ap * (ex * fy - ey * fx)) < 0.0;
+            ap * (ex * fy - ey * fx)) < 0.0f;
 }
 
-constexpr double EPSILON = std::numeric_limits<double>::epsilon();
+constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
-inline bool check_pts_equal(double x1, double y1, double x2, double y2) {
+inline bool check_pts_equal(float x1, float y1, float x2, float y2) {
     return std::fabs(x1 - x2) <= EPSILON &&
            std::fabs(y1 - y2) <= EPSILON;
 }
 
 // monotonically increases with real angle, but doesn't need expensive trigonometry
-inline double pseudo_angle(const double dx, const double dy) {
-    const double p = dx / (std::abs(dx) + std::abs(dy));
-    return (dy > 0.0 ? 3.0 - p : 1.0 + p) / 4.0; // [0..1)
+inline float pseudo_angle(const float dx, const float dy) {
+    const float p = dx / (std::abs(dx) + std::abs(dy));
+    return (dy > 0.0f ? 3.0f - p : 1.0f + p) / 4.0f; // [0..1)
 }
 
 struct DelaunatorPoint {
     std::size_t i;
-    double x;
-    double y;
+    float x;
+    float y;
     std::size_t t;
     std::size_t prev;
     std::size_t next;
@@ -173,7 +173,7 @@ struct DelaunatorPoint {
 class Delaunator {
 
 public:
-    std::vector<double> const& coords;
+    std::vector<float> const& coords;
     std::vector<std::size_t> triangles;
     std::vector<std::size_t> halfedges;
     std::vector<std::size_t> hull_prev;
@@ -181,19 +181,19 @@ public:
     std::vector<std::size_t> hull_tri;
     std::size_t hull_start;
 
-    Delaunator(std::vector<double> const& in_coords);
+    Delaunator(std::vector<float> const& in_coords);
 
-    double get_hull_area();
+    float get_hull_area();
 
 private:
     std::vector<std::size_t> m_hash;
-    double m_center_x;
-    double m_center_y;
+    float m_center_x;
+    float m_center_y;
     std::size_t m_hash_size;
     std::vector<std::size_t> m_edge_stack;
 
     std::size_t legalize(std::size_t a);
-    std::size_t hash_key(double x, double y) const;
+    std::size_t hash_key(float x, float y) const;
     std::size_t add_triangle(
         std::size_t i0,
         std::size_t i1,
@@ -204,7 +204,7 @@ private:
     void link(std::size_t a, std::size_t b);
 };
 
-Delaunator::Delaunator(std::vector<double> const& in_coords)
+Delaunator::Delaunator(std::vector<float> const& in_coords)
     : coords(in_coords),
       triangles(),
       halfedges(),
@@ -219,16 +219,16 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
       m_edge_stack() {
     std::size_t n = coords.size() >> 1;
 
-    double max_x = std::numeric_limits<double>::min();
-    double max_y = std::numeric_limits<double>::min();
-    double min_x = std::numeric_limits<double>::max();
-    double min_y = std::numeric_limits<double>::max();
+    float max_x = std::numeric_limits<float>::min();
+    float max_y = std::numeric_limits<float>::min();
+    float min_x = std::numeric_limits<float>::max();
+    float min_y = std::numeric_limits<float>::max();
     std::vector<std::size_t> ids;
     ids.reserve(n);
 
     for (std::size_t i = 0; i < n; i++) {
-        const double x = coords[2 * i];
-        const double y = coords[2 * i + 1];
+        const float x = coords[2 * i];
+        const float y = coords[2 * i + 1];
 
         if (x < min_x) min_x = x;
         if (y < min_y) min_y = y;
@@ -237,9 +237,9 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
         ids.push_back(i);
     }
-    const double cx = (min_x + max_x) / 2;
-    const double cy = (min_y + max_y) / 2;
-    double min_dist = std::numeric_limits<double>::max();
+    const float cx = (min_x + max_x) / 2;
+    const float cy = (min_y + max_y) / 2;
+    float min_dist = std::numeric_limits<float>::max();
 
     std::size_t i0 = INVALID_INDEX;
     std::size_t i1 = INVALID_INDEX;
@@ -247,38 +247,38 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
 
     // pick a seed point close to the centroid
     for (std::size_t i = 0; i < n; i++) {
-        const double d = dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
+        const float d = dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
         if (d < min_dist) {
             i0 = i;
             min_dist = d;
         }
     }
 
-    const double i0x = coords[2 * i0];
-    const double i0y = coords[2 * i0 + 1];
+    const float i0x = coords[2 * i0];
+    const float i0y = coords[2 * i0 + 1];
 
-    min_dist = std::numeric_limits<double>::max();
+    min_dist = std::numeric_limits<float>::max();
 
     // find the point closest to the seed
     for (std::size_t i = 0; i < n; i++) {
         if (i == i0) continue;
-        const double d = dist(i0x, i0y, coords[2 * i], coords[2 * i + 1]);
-        if (d < min_dist && d > 0.0) {
+        const float d = dist(i0x, i0y, coords[2 * i], coords[2 * i + 1]);
+        if (d < min_dist && d > 0.0f) {
             i1 = i;
             min_dist = d;
         }
     }
 
-    double i1x = coords[2 * i1];
-    double i1y = coords[2 * i1 + 1];
+    float i1x = coords[2 * i1];
+    float i1y = coords[2 * i1 + 1];
 
-    double min_radius = std::numeric_limits<double>::max();
+    float min_radius = std::numeric_limits<float>::max();
 
     // find the third point which forms the smallest circumcircle with the first two
     for (std::size_t i = 0; i < n; i++) {
         if (i == i0 || i == i1) continue;
 
-        const double r = circumradius(
+        const float r = circumradius(
             i0x, i0y, i1x, i1y, coords[2 * i], coords[2 * i + 1]);
 
         if (r < min_radius) {
@@ -287,12 +287,12 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
         }
     }
 
-    if (!(min_radius < std::numeric_limits<double>::max())) {
+    if (!(min_radius < std::numeric_limits<float>::max())) {
         throw std::runtime_error("not triangulation");
     }
 
-    double i2x = coords[2 * i2];
-    double i2y = coords[2 * i2 + 1];
+    float i2x = coords[2 * i2];
+    float i2y = coords[2 * i2 + 1];
 
     if (orient(i0x, i0y, i1x, i1y, i2x, i2y)) {
         std::swap(i1, i2);
@@ -335,12 +335,12 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
     triangles.reserve(max_triangles * 3);
     halfedges.reserve(max_triangles * 3);
     add_triangle(i0, i1, i2, INVALID_INDEX, INVALID_INDEX, INVALID_INDEX);
-    double xp = std::numeric_limits<double>::quiet_NaN();
-    double yp = std::numeric_limits<double>::quiet_NaN();
+    float xp = std::numeric_limits<float>::quiet_NaN();
+    float yp = std::numeric_limits<float>::quiet_NaN();
     for (std::size_t k = 0; k < n; k++) {
         const std::size_t i = ids[k];
-        const double x = coords[2 * i];
-        const double y = coords[2 * i + 1];
+        const float x = coords[2 * i];
+        const float y = coords[2 * i + 1];
 
         // skip near-duplicate points
         if (k > 0 && check_pts_equal(x, y, xp, yp)) continue;
@@ -427,8 +427,8 @@ Delaunator::Delaunator(std::vector<double> const& in_coords)
     }
 }
 
-double Delaunator::get_hull_area() {
-    std::vector<double> hull_area;
+float Delaunator::get_hull_area() {
+    std::vector<float> hull_area;
     size_t e = hull_start;
     do {
         hull_area.push_back((coords[2 * e] - coords[2 * hull_prev[e]]) * (coords[2 * e + 1] + coords[2 * hull_prev[e] + 1]));
@@ -536,11 +536,11 @@ std::size_t Delaunator::legalize(std::size_t a) {
     return ar;
 }
 
-inline std::size_t Delaunator::hash_key(const double x, const double y) const {
-    const double dx = x - m_center_x;
-    const double dy = y - m_center_y;
+inline std::size_t Delaunator::hash_key(const float x, const float y) const {
+    const float dx = x - m_center_x;
+    const float dy = y - m_center_y;
     return fast_mod(
-        static_cast<std::size_t>(std::llround(std::floor(pseudo_angle(dx, dy) * static_cast<double>(m_hash_size)))),
+        static_cast<std::size_t>(std::llround(std::floor(pseudo_angle(dx, dy) * static_cast<float>(m_hash_size)))),
         m_hash_size);
 }
 

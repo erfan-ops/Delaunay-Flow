@@ -13,21 +13,21 @@ void Star::move(
     const float dt,
     const float mouseDistanceX,
     const float mouseDistanceY,
-    const float scale,
+    const float mouseDistance,
     const float leftBound,
     const float rightBound,
     const float bottomBound,
     const float topBound
 ) noexcept
 {
-    (this->*moveFunc)(dt, mouseDistanceX, mouseDistanceY, scale, leftBound, rightBound, bottomBound, topBound);
+    (this->*moveFunc)(dt, mouseDistanceX, mouseDistanceY, mouseDistance, leftBound, rightBound, bottomBound, topBound);
 }
 
 void Star::normalMove(
     const float dt,
     const float mouseDistanceX,
     const float mouseDistanceY,
-    const float scale,
+    const float mouseDistance,
     const float leftBound,
     const float rightBound,
     const float bottomBound,
@@ -62,7 +62,7 @@ void Star::moveWithMouse(
     const float dt,
     const float mouseDistanceX,
     const float mouseDistanceY,
-    const float scale,
+    const float mouseDistance,
     const float leftBound,
     const float rightBound,
     const float bottomBound,
@@ -70,7 +70,7 @@ void Star::moveWithMouse(
 ) noexcept
 {
     float mouseDis = std::sqrt(mouseDistanceX * mouseDistanceX + mouseDistanceY * mouseDistanceY);
-    float mouseKeepDistance = settings.mouseDistance * scale;
+    float mouseKeepDistance = mouseDistance;
     if (mouseDis && mouseDis < mouseKeepDistance) {
         float ratio = mouseKeepDistance / mouseDis;
         this->x = mouseDistanceX + this->x - (mouseDistanceX * ratio);

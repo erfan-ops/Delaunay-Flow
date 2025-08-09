@@ -107,41 +107,6 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 	return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
-/*
-bool supports_adaptive_sync(GLFWwindow* window) {
-    const char* extensions = NULL;
-   
-    extensions = (const char*)glfwGetProcAddress("wglGetExtensionsStringEXT");
-    if (!extensions) {
-        extensions = (const char*)glfwGetProcAddress("wglGetExtensionsStringARB");
-    }
-   
-    const char* gl_extensions = (const char*)glGetString(GL_EXTENSIONS);
-   
-    if ((extensions && strstr(extensions, "_EXT_swap_control_tear")) ||
-        (gl_extensions && strstr(gl_extensions, "_EXT_swap_control_tear"))) {
-        return true;
-    }
-
-    glfwSwapInterval(-1);
-   
-    typedef int (APIENTRY * PFNWGLGETSWAPINTERVALPROC)(void);
-    PFNWGLGETSWAPINTERVALPROC wglGetSwapInterval = 
-        (PFNWGLGETSWAPINTERVALPROC)glfwGetProcAddress("wglGetSwapIntervalEXT");
-    if (wglGetSwapInterval && wglGetSwapInterval() == -1) {
-        return true;
-    }
-
-    glfwSwapInterval(-1);
-    glfwSwapBuffers(window);
-   
-    double start = glfwGetTime();
-    while (glfwGetTime() - start < 0.1) {}
-   
-    return false;
-}
-*/
-
 // Vertex structure (2 values for x and y, 4 values for color)
 struct Vertex {
     float x;
@@ -157,7 +122,7 @@ struct Vertex {
     Vertex(float x, float y, Color color) : x(x), y(y), r(color[0]), g(color[1]), b(color[2]), a(color[3]) {}
 };
 
-inline size_t nextHalfedge(size_t e) {
+static inline size_t nextHalfedge(size_t e) {
     return (e % 3 == 2) ? e - 2 : e + 1;
 }
 
@@ -168,10 +133,14 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    const int Width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    const int Height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-    float aspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+    const int iWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    const int iHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    const float Width = static_cast<float>(iWidth);
+    const float Height = static_cast<float>(iHeight);
+
+    float aspectRatio = Width / Height;
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -180,7 +149,7 @@ int main() {
     // using multi-sample anti-aliasing
     glfwWindowHint(GLFW_SAMPLES, settings.MSAA);
 
-    window = glfwCreateWindow(Width, Height, "Delaunay Flow", nullptr, nullptr);
+    window = glfwCreateWindow(iWidth, iHeight, "Delaunay Flow", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -239,7 +208,7 @@ int main() {
     const float bottomBound = -offsetBounds - 1.0f;
     const float topBound = offsetBounds + 1.0f;
 
-    std::vector<double> coords;
+    std::vector<float> coords;
     coords.resize(starsCount * 2);
 
     // filling up the input as well as the stars
@@ -278,9 +247,9 @@ int main() {
 
     // filling the vertices
     for (int i = 0; i < d.triangles.size(); i+=3) {
-        size_t aIdx = 2 * d.triangles[i];
-        size_t bIdx = 2 * d.triangles[i + 1];
-        size_t cIdx = 2 * d.triangles[i + 2];
+        size_t aIdx = d.triangles[i] << 1;
+        size_t bIdx = d.triangles[i + 1] << 1;
+        size_t cIdx = d.triangles[i + 2] << 1;
 
         float x1 = static_cast<float>(d.coords[aIdx]);
         float y1 = static_cast<float>(d.coords[aIdx + 1]);
@@ -356,14 +325,14 @@ int main() {
             for (size_t i = 0; i < d.halfedges.size(); ++i) {
                 size_t j = d.halfedges[i];
                 if (j != -1 && i < j) { // i < j avoids duplicate edges
-                    size_t ia = d.triangles[i];
-                    size_t ib = d.triangles[nextHalfedge(i)];
+                    size_t ia = d.triangles[i] << 1;
+                    size_t ib = d.triangles[nextHalfedge(i)] << 1;
             
-                    float x1 = static_cast<float>(d.coords[2 * ia]);
-                    float y1 = static_cast<float>(d.coords[2 * ia + 1]);
+                    float x1 = static_cast<float>(d.coords[ia]);
+                    float y1 = static_cast<float>(d.coords[ia + 1]);
             
-                    float x2 = static_cast<float>(d.coords[2 * ib]);
-                    float y2 = static_cast<float>(d.coords[2 * ib + 1]);
+                    float x2 = static_cast<float>(d.coords[ib]);
+                    float y2 = static_cast<float>(d.coords[ib + 1]);
             
                     // aspect ratio correction
                     float dx = (x2 - x1);
@@ -456,7 +425,7 @@ int main() {
     float mouseDistNDC = settings.mouseDistance * Height / 2.0f;
     glUniform1f(mouseDistLocation, mouseDistNDC);
     glUniform1f(mouseDistSqrLocation, mouseDistNDC * mouseDistNDC);
-    glUniform2f(displayBoundsLocation, static_cast<float>(Width), static_cast<float>(Height));
+    glUniform2f(displayBoundsLocation, Width, Height);
     glUniform1f(mouseBarrierBlurLocation, settings.mouseBarrierBlur);
 
     if (settings.drawMouseBarrier) {
@@ -475,8 +444,8 @@ int main() {
 
     // variables to store the mouse position
     double mouseX, mouseY;
-    double mouseXNDC, mouseYNDC;
-    double oldMouseXNDC, oldMouseYNDC;
+    float mouseXNDC, mouseYNDC;
+    float oldMouseXNDC, oldMouseYNDC;
 
     // interval between frames (useless if vsync is on)
     const float stepInterval = 1.0f / settings.targetFPS;
@@ -498,8 +467,8 @@ int main() {
     glfwShowWindow(window);
 
     glfwGetCursorPos(window, &mouseX, &mouseY);
-    mouseXNDC = mouseX / Width * 2.0f - 1.0f;
-    mouseYNDC = -(mouseY / Height * 2.0f - 1.0f);
+    mouseXNDC = static_cast<float>(mouseX) / Width * 2.0f - 1.0f;
+    mouseYNDC = -(static_cast<float>(mouseY) / Height * 2.0f - 1.0f);
 
     // timestamps to keep track of delta-time
     auto newF = std::chrono::high_resolution_clock::now();
@@ -517,8 +486,8 @@ int main() {
         oldMouseYNDC = mouseYNDC;
         glfwGetCursorPos(window, &mouseX, &mouseY);
         // linear remapping
-        mouseXNDC = (mouseX / Width * 2.0f - 1.0f) * aspectRatio;
-        mouseYNDC = -(mouseY / Height * 2.0f - 1.0f);
+        mouseXNDC = (static_cast<float>(mouseX) / Width * 2.0f - 1.0f) * aspectRatio;
+        mouseYNDC = -(static_cast<float>(mouseY) / Height * 2.0f - 1.0f);
 
         // calculating how much the area around the mouse should expand depending on its speed
         float mdxm = static_cast<float>(std::abs(mouseXNDC - oldMouseXNDC));
@@ -527,6 +496,7 @@ int main() {
         // float mdm = mdxm*mdxm + mdym*mdym;
         // float mdm = std::log(mdxm*mdxm + mdym*mdym);
         float scale = 1.0f + (mdm * settings.speedBasedMouseDistanceMultiplier);
+        float mouseBarrierDist = settings.mouseDistance * scale;
 
         // clearing the screen
         glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -537,7 +507,7 @@ int main() {
             Star& star = stars.at(i);
             float mouseDisX = static_cast<float>(mouseXNDC) - star.getX();
             float mouseDisY = static_cast<float>(mouseYNDC) - star.getY();
-            star.move(dt, mouseDisX, mouseDisY, scale, leftBound, rightBound, bottomBound, topBound);
+            star.move(dt, mouseDisX, mouseDisY, mouseBarrierDist, leftBound, rightBound, bottomBound, topBound);
 
             int i2 = i * 2;
             coords[i2] = star.getX();
@@ -550,7 +520,7 @@ int main() {
         uniqueEdgeCount = 0;
         for (size_t i = 0; i < d.halfedges.size(); ++i) {
             size_t j = d.halfedges[i];
-            if (j != -1 && i < static_cast<size_t>(j)) {
+            if (j != -1 && i < j) {
                 ++uniqueEdgeCount;
             }
         }
@@ -561,9 +531,9 @@ int main() {
         vertices.reserve(d.triangles.size() + numberOfStarVertices + numberOfLineVertices);
 
         for (int i = 0; i < d.triangles.size(); i+=3) {
-            size_t aIdx = 2 * d.triangles[i];
-            size_t bIdx = 2 * d.triangles[i + 1];
-            size_t cIdx = 2 * d.triangles[i + 2];
+            size_t aIdx = d.triangles[i] << 1;
+            size_t bIdx = d.triangles[i + 1] << 1;
+            size_t cIdx = d.triangles[i + 2] << 1;
     
             float x1 = static_cast<float>(d.coords[aIdx]);
             float y1 = static_cast<float>(d.coords[aIdx + 1]);
@@ -612,7 +582,6 @@ int main() {
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        // gameTick(dt, stepInterval, fractionalTime);
         tickFunc(dt, stepInterval, fractionalTime);
     }
 
