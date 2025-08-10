@@ -140,10 +140,10 @@ inline bool in_circle(
     const float ap = dx * dx + dy * dy;
     const float bp = ex * ex + ey * ey;
     const float cp = fx * fx + fy * fy;
-
+    
     return (dx * (ey * cp - bp * fy) -
             dy * (ex * cp - bp * fx) +
-            ap * (ex * fy - ey * fx)) < 0.0f;
+            ap * (ex * fy - ey * fx)) < -1e-8f;
 }
 
 constexpr float EPSILON = std::numeric_limits<float>::epsilon();

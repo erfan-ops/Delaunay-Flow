@@ -230,20 +230,12 @@ int main() {
     // getting number of vertices needed to draw the stars
     // `0` if user doesn't want the stars to render
     // otherwise `number of stars * number of segments`
-    const size_t numberOfStarVertices = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
-    
-    size_t uniqueEdgeCount = 0;
-    for (size_t i = 0; i < d.halfedges.size(); ++i) {
-        size_t j = d.halfedges[i];
-        if (j != -1 && i < static_cast<size_t>(j)) {
-            ++uniqueEdgeCount;
-        }
-    }
-    size_t numberOfLineVertices = settings.drawLines ? uniqueEdgeCount * 6 : 0;
-
+    const size_t numberOfStarVertices     = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
+    const size_t numberOfLineVertices     = settings.drawLines ? settings.stars.count * 18 - 36 : 0;
+    const size_t numberOfTriangleVertices = (((settings.stars.count << 1) - 5) * 3);
 
     // reserve memory for the vertices
-    size_t reserve_count = (((settings.stars.count << 1) - 5) * 3) + numberOfStarVertices + numberOfLineVertices;
+    size_t reserve_count = numberOfTriangleVertices + numberOfStarVertices + numberOfLineVertices;
     std::vector<Vertex> vertices;
     vertices.reserve(reserve_count);
 
@@ -521,15 +513,6 @@ int main() {
 
         // Delaunay Triangulation
         delaunator::Delaunator d(coords);
-
-        uniqueEdgeCount = 0;
-        for (size_t i = 0; i < d.halfedges.size(); ++i) {
-            size_t j = d.halfedges[i];
-            if (j != -1 && i < j) {
-                ++uniqueEdgeCount;
-            }
-        }
-        size_t numberOfLineVertices = settings.drawLines ? uniqueEdgeCount * 6 : 0;
 
         // updating the vertices array
         vertices.clear();
