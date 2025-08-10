@@ -213,7 +213,7 @@ int main() {
 
     // filling up the input as well as the stars
 	for (int i = 0; i < starsCount; i++) {
-		float x = randomUniform(leftBound, rightBound);
+        float x = randomUniform(leftBound, rightBound);
 		float y = randomUniform(bottomBound, topBound);
 		float speed = randomUniform(settings.stars.minSpeed, settings.stars.maxSpeed);
 		float angle = randomUniform(0, TAU_F);
@@ -243,9 +243,7 @@ int main() {
 
 
     // reserve memory for the vertices
-    size_t max_triangles = (settings.stars.count - 5) << 1; // maximum possible number of triangles
-    size_t max_tri_vertices = 3 * max_triangles;
-    size_t reserve_count = max_tri_vertices + numberOfStarVertices + numberOfLineVertices;
+    size_t reserve_count = (((settings.stars.count << 1) - 5) * 3) + numberOfStarVertices + numberOfLineVertices;
     std::vector<Vertex> vertices;
     vertices.reserve(reserve_count);
 
@@ -343,9 +341,11 @@ int main() {
                     // aspect ratio correction
                     float dx = (x2 - x1);
                     float dy = y2 - y1;
-                    float length = std::sqrt(dx * dx + dy * dy);
+                    float lengthSqr = dx * dx + dy * dy;
             
-                    if (length != 0.0f) {
+                    if (lengthSqr != 0.0f) {
+                        float length = std::sqrt(lengthSqr);
+
                         float nx = -dy / length;
                         float ny = dx / length;
             
@@ -512,9 +512,7 @@ int main() {
         // moving the stars and updating the triangle input
         for (int i = 0; i < stars.size(); i++) {
             Star& star = stars.at(i);
-            float mouseDisX = static_cast<float>(mouseXNDC) - star.getX();
-            float mouseDisY = static_cast<float>(mouseYNDC) - star.getY();
-            star.move(dt, mouseDisX, mouseDisY, mouseBarrierDist, leftBound, rightBound, bottomBound, topBound);
+            star.move(dt, mouseXNDC, mouseYNDC, mouseBarrierDist, leftBound, rightBound, bottomBound, topBound);
 
             int i2 = i << 1;
             coords[i2] = star.getX();
