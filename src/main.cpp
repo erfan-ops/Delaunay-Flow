@@ -209,7 +209,7 @@ int main() {
     const float topBound = offsetBounds + 1.0f;
 
     std::vector<float> coords;
-    coords.resize(starsCount * 2);
+    coords.resize(starsCount << 1);
 
     // filling up the input as well as the stars
 	for (int i = 0; i < starsCount; i++) {
@@ -219,8 +219,9 @@ int main() {
 		float angle = randomUniform(0, TAU_F);
 		stars.emplace_back(x, y, speed, angle);
 
-		coords[i * 2] = x;
-		coords[i * 2 + 1] = y;
+        int i2 = i << 1;
+		coords[i2] = x;
+		coords[i2 + 1] = y;
 	}
 
     // Delaunay Triangulation
@@ -242,33 +243,38 @@ int main() {
 
 
     // reserve memory for the vertices
+    size_t max_triangles = (settings.stars.count - 5) << 1; // maximum possible number of triangles
+    size_t max_tri_vertices = 3 * max_triangles;
+    size_t reserve_count = max_tri_vertices + numberOfStarVertices + numberOfLineVertices;
     std::vector<Vertex> vertices;
-    vertices.reserve(d.triangles.size() + numberOfStarVertices + numberOfLineVertices);
+    vertices.reserve(reserve_count);
 
-    // filling the vertices
-    for (int i = 0; i < d.triangles.size(); i+=3) {
-        size_t aIdx = d.triangles[i] << 1;
-        size_t bIdx = d.triangles[i + 1] << 1;
-        size_t cIdx = d.triangles[i + 2] << 1;
+    std::function<void(delaunator::Delaunator&)> insertTrianglesFunc = [&](delaunator::Delaunator& d) {
+        // filling the vertices
+        for (int i = 0; i < d.triangles.size(); i+=3) {
+            size_t aIdx = d.triangles[i] << 1;
+            size_t bIdx = d.triangles[i + 1] << 1;
+            size_t cIdx = d.triangles[i + 2] << 1;
 
-        float x1 = static_cast<float>(d.coords[aIdx]);
-        float y1 = static_cast<float>(d.coords[aIdx + 1]);
+            float x1 = static_cast<float>(d.coords[aIdx]);
+            float y1 = static_cast<float>(d.coords[aIdx + 1]);
 
-        float x2 = static_cast<float>(d.coords[bIdx]);
-        float y2 = static_cast<float>(d.coords[bIdx + 1]);
+            float x2 = static_cast<float>(d.coords[bIdx]);
+            float y2 = static_cast<float>(d.coords[bIdx + 1]);
 
-        float x3 = static_cast<float>(d.coords[cIdx]);
-        float y3 = static_cast<float>(d.coords[cIdx + 1]);
+            float x3 = static_cast<float>(d.coords[cIdx]);
+            float y3 = static_cast<float>(d.coords[cIdx + 1]);
 
-        float cy = (y1 + y2 + y3) / 3.0f;
-        cy = (cy + 1.0f) * 0.5f;
+            float cy = (y1 + y2 + y3) / 3.0f;
+            cy = (cy + 1.0f) * 0.5f;
 
-        Color color = interpolateColors(settings.backGroundColors, cy);
-        
-        vertices.emplace_back(x1, y1, color);
-        vertices.emplace_back(x2, y2, color);
-        vertices.emplace_back(x3, y3, color);
-    }
+            Color color = interpolateColors(settings.backGroundColors, cy);
+            
+            vertices.emplace_back(x1, y1, color);
+            vertices.emplace_back(x2, y2, color);
+            vertices.emplace_back(x3, y3, color);
+        }
+    };
 
     // custom function that inserts the `stars vertices` into the `vertices` array only if `settings.stars.draw` is `true`
     std::function<void()> insertStarsFunc;
@@ -371,6 +377,7 @@ int main() {
         insertLinesFunc = [](delaunator::Delaunator&) {};
     }
 
+    insertTrianglesFunc(d);
     insertLinesFunc(d);
     insertStarsFunc();
 
@@ -411,13 +418,13 @@ int main() {
         std::cerr << "Failed to compile shaders!" << std::endl;
         return -1;
     }
-    GLint aspectRatioLocation = glGetUniformLocation(shaderProgram, "aspectRatio");
-    GLint mousePosLocation = glGetUniformLocation(shaderProgram, "mousePos");
-    GLint mouseDistLocation = glGetUniformLocation(shaderProgram, "mouseDist");
-    GLint mouseDistSqrLocation = glGetUniformLocation(shaderProgram, "mouseDistSqr");
-    GLint displayBoundsLocation = glGetUniformLocation(shaderProgram, "displayBounds");
+    GLint aspectRatioLocation       = glGetUniformLocation(shaderProgram, "aspectRatio");
+    GLint mousePosLocation          = glGetUniformLocation(shaderProgram, "mousePos");
+    GLint mouseDistLocation         = glGetUniformLocation(shaderProgram, "mouseDist");
+    GLint mouseDistSqrLocation      = glGetUniformLocation(shaderProgram, "mouseDistSqr");
+    GLint displayBoundsLocation     = glGetUniformLocation(shaderProgram, "displayBounds");
     GLint mouseBarrierColorLocation = glGetUniformLocation(shaderProgram, "mouseBarrierColor");
-    GLint mouseBarrierBlurLocation = glGetUniformLocation(shaderProgram, "mouseBarrierBlur");
+    GLint mouseBarrierBlurLocation  = glGetUniformLocation(shaderProgram, "mouseBarrierBlur");
 
     glUseProgram(shaderProgram);
 
@@ -493,8 +500,8 @@ int main() {
         float mdxm = static_cast<float>(std::abs(mouseXNDC - oldMouseXNDC));
         float mdym = static_cast<float>(std::abs(mouseYNDC - oldMouseYNDC));
         float mdm = std::sqrt(mdxm*mdxm + mdym*mdym);
-        // float mdm = mdxm*mdxm + mdym*mdym;
-        // float mdm = std::log(mdxm*mdxm + mdym*mdym);
+        // float mdm = mdxm*mdxm + mdym*mdym; // for exponential growth
+        // float mdm = std::log(mdxm*mdxm + mdym*mdym); // for logarithmic growth
         float scale = 1.0f + (mdm * settings.speedBasedMouseDistanceMultiplier);
         float mouseBarrierDist = settings.mouseDistance * scale;
 
@@ -509,7 +516,7 @@ int main() {
             float mouseDisY = static_cast<float>(mouseYNDC) - star.getY();
             star.move(dt, mouseDisX, mouseDisY, mouseBarrierDist, leftBound, rightBound, bottomBound, topBound);
 
-            int i2 = i * 2;
+            int i2 = i << 1;
             coords[i2] = star.getX();
 		    coords[i2 + 1] = star.getY();
         }
@@ -526,36 +533,11 @@ int main() {
         }
         size_t numberOfLineVertices = settings.drawLines ? uniqueEdgeCount * 6 : 0;
 
-        // // updating the vertices array
+        // updating the vertices array
         vertices.clear();
-        vertices.reserve(d.triangles.size() + numberOfStarVertices + numberOfLineVertices);
 
-        for (int i = 0; i < d.triangles.size(); i+=3) {
-            size_t aIdx = d.triangles[i] << 1;
-            size_t bIdx = d.triangles[i + 1] << 1;
-            size_t cIdx = d.triangles[i + 2] << 1;
-    
-            float x1 = static_cast<float>(d.coords[aIdx]);
-            float y1 = static_cast<float>(d.coords[aIdx + 1]);
-    
-            float x2 = static_cast<float>(d.coords[bIdx]);
-            float y2 = static_cast<float>(d.coords[bIdx + 1]);
-    
-            float x3 = static_cast<float>(d.coords[cIdx]);
-            float y3 = static_cast<float>(d.coords[cIdx + 1]);
-    
-            float cy = (y1 + y2 + y3) / 3.0f;
-            // linear remapping again
-            cy = (cy + 1.0f) * 0.5f;
-    
-            Color color = interpolateColors(settings.backGroundColors, cy);
-            
-            vertices.emplace_back(x1, y1, color);
-            vertices.emplace_back(x2, y2, color);
-            vertices.emplace_back(x3, y3, color);
-        }
-
-        // inserting the stars vertices
+        // inserting the vertices
+        insertTrianglesFunc(d);
         insertLinesFunc(d);
         insertStarsFunc();
 
