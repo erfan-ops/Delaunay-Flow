@@ -36,6 +36,7 @@ Customize the wallpaper by editing `settings.json`:
     "vsync": false,
 
     "background-colors": [
+        [ 0.28, 0.09, 0.65, 1 ],
         [ 0.98, 0.33, 0.33, 1 ],
         [ 0.98, 0.55, 0.15, 1 ],
         [ 0.96, 0.82, 0.2, 1 ],
@@ -43,21 +44,37 @@ Customize the wallpaper by editing `settings.json`:
     ],
   
     "stars": {
-        "draw-stars": true,
+        "draw": false,
         "segments": 12,
         "radius": 0.01,
-        "count": 800,
-        "min-speed": 0,
-        "max-speed": 0.035,
-        "color": [0, 0, 0, 0.75]
+        "count": 150,
+        "min-speed": 0.005,
+        "max-speed": 0.026,
+        "color": [ 0, 0, 0, 0.66 ]
     },
-  
-    "mouse-interaction": true,
-    "keep-distance-from-mouse": 0.2,
-    "dynamic-mouse-distance-factor": 0,
-    "offset-bounds":  0.5,
 
-    "MSAA": 2
+    "edges": {
+        "draw": true,
+        "width": 0.0038,
+        "color": [ 0, 0, 0, 0.69 ]
+    },
+
+    "interaction": {
+        "mouse-interaction": true,
+        "distance-from-mouse": 0.25,
+        "speed-based-mouse-distance-multiplier": 0
+    },
+
+    "mouse-barrier": {
+        "draw": true,
+        "radius": 0.25,
+        "color": [ 0.2, 0.05, 0.7, 0.3 ],
+        "blur": 25
+    },
+
+    "offset-bounds": 0.3,
+
+    "MSAA": 4
 }
 ```
 
@@ -65,7 +82,9 @@ Customize the wallpaper by editing `settings.json`:
 - `vsync`: uses vertical synchronization.
 - `background-colors`: Gradient stops (RGBA format) interpolated based on triangle Y position.
 - `stars`: Star configurations (speed, count, radius, color, etc.).
-- `mouse-interaction`: enables the mouse to move the stars away.
+- `edges`: Configuration for drawing triangle edges.
+- `interaction`: enables the mouse to move the stars away.
+- `mouse-barrier`: Configuration for drawing a glow around the mouse.
 - `offset-bounds`: The screen offset which enables the stars to go pass though screen boundaries.
 - `MSAA`: enables multi-sample anti-aliasing
 

@@ -15,7 +15,7 @@ Settings loadSettings(const std::string& filename) {
 
 	settings.backGroundColors = j["background-colors"].get<std::vector<Color>>();
 
-	settings.stars.draw = j["stars"]["draw-stars"];
+	settings.stars.draw = j["stars"]["draw"];
 	settings.stars.segments = j["stars"]["segments"];
 	settings.stars.radius = j["stars"]["radius"];
 	settings.stars.count = j["stars"]["count"];
@@ -23,17 +23,18 @@ Settings loadSettings(const std::string& filename) {
 	settings.stars.maxSpeed = j["stars"]["max-speed"];
 	settings.stars.color = j["stars"]["color"].get<Color>();
 
-	settings.drawLines = j["draw-lines"];
-	settings.lineWidth = j["line-width"];
-	settings.linesColor = j["lines-color"].get<Color>();
+	settings.edges.draw = j["edges"]["draw"];
+	settings.edges.width =j["edges"]["width"];
+	settings.edges.color = j["edges"]["color"].get<Color>();
 
-	settings.moveFromMouse = j["mouse-interaction"];
-	settings.mouseDistance = j["keep-distance-from-mouse"];
-	settings.speedBasedMouseDistanceMultiplier = j["dynamic-mouse-distance-factor"];
+	settings.interaction.mouseInteraction = j["interaction"]["mouse-interaction"];
+	settings.interaction.distanceFromMouse = j["interaction"]["distance-from-mouse"];
+	settings.interaction.speedBasedMouseDistanceMultiplier = j["interaction"]["speed-based-mouse-distance-multiplier"];
 
-	settings.drawMouseBarrier = j["draw-mouse-barrier"];
-	settings.mouseBarrierColor = j["mouse-barrier-color"].get<Color>();
-	settings.mouseBarrierBlur = j["mouse-barrier-blur"];
+	settings.barrier.draw = j["mouse-barrier"]["draw"];
+	settings.barrier.radius = j["mouse-barrier"]["radius"];
+	settings.barrier.color = j["mouse-barrier"]["color"].get<Color>();
+	settings.barrier.blur = j["mouse-barrier"]["blur"];
 
 	settings.offsetBounds = j["offset-bounds"];
 

@@ -11,10 +11,10 @@ static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     std::vector<HWND>* workerwWindows = reinterpret_cast<std::vector<HWND>*>(lParam);
 
     // Get the class name of the window
-    char className[256];
-    if (GetClassNameA(hwnd, className, sizeof(className))) {
+    wchar_t className[256];
+    if (GetClassName(hwnd, className, sizeof(className))) {
         // Check if the class name is "WorkerW"
-        if (std::string(className) == "WorkerW") {
+        if (std::wstring(className) == L"WorkerW") {
             workerwWindows->push_back(hwnd);
         }
     }
@@ -24,13 +24,13 @@ static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
 // Function to create and retrieve the WorkerW layer
 HWND CreateWorkerWLayer() {
     // Get the handle to the Progman window
-    HWND progman = FindWindowW(L"Progman", nullptr);
+    HWND progman = FindWindow(L"Progman", nullptr);
     if (!progman) {
         return nullptr;
     }
 
     // Send a message to Progman to spawn a WorkerW window
-    SendMessageTimeoutW(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, nullptr);
+    SendMessageTimeout(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, nullptr);
 
     // Vector to store WorkerW windows
     std::vector<HWND> workerwWindows;
@@ -53,14 +53,14 @@ wchar_t* GetCurrentWallpaper() {
     HKEY hKey;
 
     // Open the registry key
-    LONG result = RegOpenKeyExW(HKEY_CURRENT_USER, regKey, 0, KEY_READ, &hKey);
+    LONG result = RegOpenKeyEx(HKEY_CURRENT_USER, regKey, 0, KEY_READ, &hKey);
     if (result != ERROR_SUCCESS) {
         throw std::runtime_error("Failed to open registry key, error code: " + std::to_string(result));
     }
 
     // Query the size of the value
     DWORD valueSize = 0;
-    result = RegQueryValueExW(hKey, regValue, nullptr, nullptr, nullptr, &valueSize);
+    result = RegQueryValueEx(hKey, regValue, nullptr, nullptr, nullptr, &valueSize);
     if (result != ERROR_SUCCESS) {
         RegCloseKey(hKey);
         throw std::runtime_error("Failed to query registry value size, error code: " + std::to_string(result));
@@ -68,7 +68,7 @@ wchar_t* GetCurrentWallpaper() {
 
     // Allocate buffer for the value
     wchar_t* valueBuffer = new wchar_t[valueSize / sizeof(wchar_t)];
-    result = RegQueryValueExW(hKey, regValue, nullptr, nullptr, reinterpret_cast<LPBYTE>(valueBuffer), &valueSize);
+    result = RegQueryValueEx(hKey, regValue, nullptr, nullptr, reinterpret_cast<LPBYTE>(valueBuffer), &valueSize);
     if (result != ERROR_SUCCESS) {
         RegCloseKey(hKey);
         delete[] valueBuffer; // Free allocated memory in case of failure

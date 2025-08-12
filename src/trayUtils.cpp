@@ -3,7 +3,7 @@
 
 
 HICON LoadIconFromResource() {
-    return (HICON)LoadImageW(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE);
+    return (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE);
 }
 
 void AddTrayIcon(const HWND hwnd, const HICON hIcon, const wchar_t* tooltip) {
@@ -15,7 +15,7 @@ void AddTrayIcon(const HWND hwnd, const HICON hIcon, const wchar_t* tooltip) {
     nid.uCallbackMessage = WM_TRAYICON;
     nid.hIcon = hIcon;
     wcsncpy_s(nid.szTip, _countof(nid.szTip) - 1, tooltip, _TRUNCATE);
-    Shell_NotifyIconW(NIM_ADD, &nid);
+    Shell_NotifyIcon(NIM_ADD, &nid);
 }
 
 void RemoveTrayIcon(const HWND hwnd) {
@@ -23,5 +23,5 @@ void RemoveTrayIcon(const HWND hwnd) {
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hwnd;
     nid.uID = TRAY_ICON_ID;
-    Shell_NotifyIconW(NIM_DELETE, &nid);
+    Shell_NotifyIcon(NIM_DELETE, &nid);
 }

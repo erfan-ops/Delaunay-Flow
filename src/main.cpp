@@ -1,5 +1,3 @@
-#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-
 #define NOMINMAX
 #include <windows.h>
 
@@ -35,18 +33,8 @@ static float randomUniform(float start, float end) {
 	return static_cast<float>(dist(gen)); // Generate the random number
 }
 
-// sleeps so that each frame took `stepInterval` seconds to complete
-static inline void gameTick(const float frameTime, const float stepInterval, float& fractionalTime) {
-	if (frameTime < stepInterval) {
-		float totalSleepTime = (stepInterval - frameTime) + fractionalTime;
-		int sleepMilliseconds = static_cast<int>(totalSleepTime * 1e+3f);
-		fractionalTime = (totalSleepTime - sleepMilliseconds * 1e-3f);
-		std::this_thread::sleep_for(std::chrono::milliseconds(sleepMilliseconds));
-	}
-}
-
 // returns a color from a gradient of given colors based on the value of `t` (range: 0-1)
-static Color interpolateColors(const std::vector<Color>& colors, float t) {
+static Color interpolateColors(const std::vector<Color>& colors, float t) noexcept {
 	if (colors.empty()) return { 0, 0, 0, 1 }; // Default: Black
 	if (colors.size() == 1) return colors[0]; // Only 1 color
 
@@ -122,7 +110,7 @@ struct Vertex {
     Vertex(float x, float y, Color color) : x(x), y(y), r(color[0]), g(color[1]), b(color[2]), a(color[3]) {}
 };
 
-static inline size_t nextHalfedge(size_t e) {
+static inline size_t nextHalfedge(size_t e) noexcept {
     return (e % 3 == 2) ? e - 2 : e + 1;
 }
 
@@ -171,7 +159,16 @@ int main() {
         tickFunc = [](const float, const float, float&) {};
     } else {
         glfwSwapInterval(0);
-        tickFunc = &gameTick;
+
+        // sleeps so that each frame took `stepInterval` seconds to complete
+        tickFunc = [](const float frameTime, const float stepInterval, float& fractionalTime) {
+            if (frameTime < stepInterval) {
+                float totalSleepTime = (stepInterval - frameTime) + fractionalTime;
+                int sleepMilliseconds = static_cast<int>(totalSleepTime * 1e+3f);
+                fractionalTime = (totalSleepTime - sleepMilliseconds * 1e-3f);
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleepMilliseconds));
+            }
+        };
     }
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -187,12 +184,7 @@ int main() {
 
 
     // optional move method depending on the `mouse-interaction` in settings
-    if (settings.moveFromMouse) {
-		Star::moveFunc = &Star::moveWithMouse;
-	}
-	else {
-		Star::moveFunc = &Star::normalMove;
-	}
+    Star::init(settings.interaction.mouseInteraction);
 
     const auto starsCount = settings.stars.count;
 
@@ -231,7 +223,7 @@ int main() {
     // `0` if user doesn't want the stars to render
     // otherwise `number of stars * number of segments`
     const size_t numberOfStarVertices     = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
-    const size_t numberOfLineVertices     = settings.drawLines ? settings.stars.count * 18 - 36 : 0;
+    const size_t numberOfLineVertices     = settings.edges.draw ? settings.stars.count * 18 - 36 : 0;
     const size_t numberOfTriangleVertices = (((settings.stars.count << 1) - 5) * 3);
 
     // reserve memory for the vertices
@@ -246,14 +238,14 @@ int main() {
             size_t bIdx = d.triangles[i + 1] << 1;
             size_t cIdx = d.triangles[i + 2] << 1;
 
-            float x1 = static_cast<float>(d.coords[aIdx]);
-            float y1 = static_cast<float>(d.coords[aIdx + 1]);
+            float x1 = (d.coords[aIdx]);
+            float y1 = (d.coords[aIdx + 1]);
 
-            float x2 = static_cast<float>(d.coords[bIdx]);
-            float y2 = static_cast<float>(d.coords[bIdx + 1]);
+            float x2 = (d.coords[bIdx]);
+            float y2 = (d.coords[bIdx + 1]);
 
-            float x3 = static_cast<float>(d.coords[cIdx]);
-            float y3 = static_cast<float>(d.coords[cIdx + 1]);
+            float x3 = (d.coords[cIdx]);
+            float y3 = (d.coords[cIdx + 1]);
 
             float cy = (y1 + y2 + y3) / 3.0f;
             cy = (cy + 1.0f) * 0.5f;
@@ -314,9 +306,9 @@ int main() {
 
 
     std::function<void(delaunator::Delaunator&)> insertLinesFunc;
-    float halfWidth = settings.lineWidth * 0.5f;
+    float halfWidth = settings.edges.width * 0.5f;
 
-    if (settings.drawLines) {
+    if (settings.edges.draw) {
         insertLinesFunc = [&](delaunator::Delaunator& d) {
             for (size_t i = 0; i < d.halfedges.size(); ++i) {
                 size_t j = d.halfedges[i];
@@ -324,11 +316,11 @@ int main() {
                     size_t ia = d.triangles[i] << 1;
                     size_t ib = d.triangles[nextHalfedge(i)] << 1;
             
-                    float x1 = static_cast<float>(d.coords[ia]);
-                    float y1 = static_cast<float>(d.coords[ia + 1]);
+                    float x1 = (d.coords[ia]);
+                    float y1 = (d.coords[ia + 1]);
             
-                    float x2 = static_cast<float>(d.coords[ib]);
-                    float y2 = static_cast<float>(d.coords[ib + 1]);
+                    float x2 = (d.coords[ib]);
+                    float y2 = (d.coords[ib + 1]);
             
                     // aspect ratio correction
                     float dx = (x2 - x1);
@@ -354,13 +346,13 @@ int main() {
                         float ry4 = y2 + ny * halfWidth;
             
                         // Two triangles per thick line
-                        vertices.emplace_back(rx1, ry1, settings.linesColor);
-                        vertices.emplace_back(rx2, ry2, settings.linesColor);
-                        vertices.emplace_back(rx3, ry3, settings.linesColor);
+                        vertices.emplace_back(rx1, ry1, settings.edges.color);
+                        vertices.emplace_back(rx2, ry2, settings.edges.color);
+                        vertices.emplace_back(rx3, ry3, settings.edges.color);
             
-                        vertices.emplace_back(rx4, ry4, settings.linesColor);
-                        vertices.emplace_back(rx3, ry3, settings.linesColor);
-                        vertices.emplace_back(rx1, ry1, settings.linesColor);
+                        vertices.emplace_back(rx4, ry4, settings.edges.color);
+                        vertices.emplace_back(rx3, ry3, settings.edges.color);
+                        vertices.emplace_back(rx1, ry1, settings.edges.color);
                     }
                 }
             }
@@ -410,30 +402,28 @@ int main() {
         std::cerr << "Failed to compile shaders!" << std::endl;
         return -1;
     }
-    GLint aspectRatioLocation       = glGetUniformLocation(shaderProgram, "aspectRatio");
-    GLint mousePosLocation          = glGetUniformLocation(shaderProgram, "mousePos");
-    GLint mouseDistLocation         = glGetUniformLocation(shaderProgram, "mouseDist");
-    GLint mouseDistSqrLocation      = glGetUniformLocation(shaderProgram, "mouseDistSqr");
-    GLint displayBoundsLocation     = glGetUniformLocation(shaderProgram, "displayBounds");
-    GLint mouseBarrierColorLocation = glGetUniformLocation(shaderProgram, "mouseBarrierColor");
-    GLint mouseBarrierBlurLocation  = glGetUniformLocation(shaderProgram, "mouseBarrierBlur");
+    GLint aspectRatioLocation        = glGetUniformLocation(shaderProgram, "aspectRatio");
+    GLint mousePosLocation           = glGetUniformLocation(shaderProgram, "mousePos");
+    GLint mouseBarrierRadiusLocation = glGetUniformLocation(shaderProgram, "mouseBarrierRadius");
+    GLint displayBoundsLocation      = glGetUniformLocation(shaderProgram, "displayBounds");
+    GLint mouseBarrierColorLocation  = glGetUniformLocation(shaderProgram, "mouseBarrierColor");
+    GLint mouseBarrierBlurLocation   = glGetUniformLocation(shaderProgram, "mouseBarrierBlur");
 
     glUseProgram(shaderProgram);
 
     glUniform1f(aspectRatioLocation, aspectRatio);
-    float mouseDistNDC = settings.mouseDistance * Height / 2.0f;
-    glUniform1f(mouseDistLocation, mouseDistNDC);
-    glUniform1f(mouseDistSqrLocation, mouseDistNDC * mouseDistNDC);
+    float mouseDistNDC = settings.barrier.radius * Height / 2.0f;
+    glUniform1f(mouseBarrierRadiusLocation, mouseDistNDC);
     glUniform2f(displayBoundsLocation, Width, Height);
-    glUniform1f(mouseBarrierBlurLocation, settings.mouseBarrierBlur);
+    glUniform1f(mouseBarrierBlurLocation, settings.barrier.blur);
 
-    if (settings.drawMouseBarrier) {
+    if (settings.barrier.draw) {
         glUniform4f(
             mouseBarrierColorLocation,
-            settings.mouseBarrierColor[0],
-            settings.mouseBarrierColor[1],
-            settings.mouseBarrierColor[2],
-            settings.mouseBarrierColor[3]
+            settings.barrier.color[0],
+            settings.barrier.color[1],
+            settings.barrier.color[2],
+            settings.barrier.color[3]
         );
     } else {
         glUniform4f(mouseBarrierColorLocation, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -489,13 +479,13 @@ int main() {
         mouseYNDC = -(static_cast<float>(mouseY) / Height * 2.0f - 1.0f);
 
         // calculating how much the area around the mouse should expand depending on its speed
-        float mdxm = static_cast<float>(std::abs(mouseXNDC - oldMouseXNDC));
-        float mdym = static_cast<float>(std::abs(mouseYNDC - oldMouseYNDC));
+        float mdxm = (std::abs(mouseXNDC - oldMouseXNDC));
+        float mdym = (std::abs(mouseYNDC - oldMouseYNDC));
         float mdm = std::sqrt(mdxm*mdxm + mdym*mdym);
         // float mdm = mdxm*mdxm + mdym*mdym; // for exponential growth
         // float mdm = std::log(mdxm*mdxm + mdym*mdym); // for logarithmic growth
-        float scale = 1.0f + (mdm * settings.speedBasedMouseDistanceMultiplier);
-        float mouseBarrierDist = settings.mouseDistance * scale;
+        float scale = 1.0f + (mdm * settings.interaction.speedBasedMouseDistanceMultiplier);
+        float mouseBarrierDist = settings.interaction.distanceFromMouse * scale;
 
         // clearing the screen
         glClearColor(0.f, 0.f, 0.f, 1.f);

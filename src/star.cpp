@@ -2,7 +2,7 @@
 #include <cmath>
 
 
-static const float mouseKeepDistanceSqr = settings.mouseDistance * settings.mouseDistance;
+static const float mouseKeepDistanceSqr = settings.interaction.distanceFromMouse * settings.interaction.distanceFromMouse;
 
 void (Star::* Star::moveFunc)(const float, const float, const float, const float, const float, const float, const float, const float) noexcept = nullptr;
 
@@ -81,4 +81,13 @@ void Star::moveWithMouse(
         this->x = mouseDistanceX + this->x - (mouseDistanceX * ratio);
         this->y = mouseDistanceY + this->y - (mouseDistanceY * ratio);
     }
+}
+
+void Star::init(const bool moveFromMouse) noexcept {
+    if (moveFromMouse) {
+		Star::moveFunc = &Star::moveWithMouse;
+	}
+	else {
+		Star::moveFunc = &Star::normalMove;
+	}
 }

@@ -1,8 +1,8 @@
 #version 330 core
 
 uniform vec2 mousePos;
-uniform float mouseDist;
 uniform vec2 displayBounds;
+uniform float mouseBarrierRadius;
 uniform vec4 mouseBarrierColor;
 uniform float mouseBarrierBlur;
 
@@ -22,7 +22,7 @@ void main() {
     vec2 diff = fragPos - correctedMousePos;
 
     float dist = length(diff);
-    float edge = mouseDist;
+    float edge = mouseBarrierRadius;
 
     float aa = fwidth(dist) * mouseBarrierBlur;
 

@@ -22,18 +22,25 @@ struct Settings {
 		Color color;
 	} stars;
 
-	bool drawLines;
-	float lineWidth;
-	Color linesColor;
+	struct Edges {
+		bool draw;
+		float width;
+		Color color;
+	} edges;
 
-	bool moveFromMouse;
-	float mouseDistance;
-	float speedBasedMouseDistanceMultiplier;
+	struct Interaction {
+		bool mouseInteraction;
+		float distanceFromMouse;
+		float speedBasedMouseDistanceMultiplier;
+	} interaction;
 
-	bool drawMouseBarrier;
-	Color mouseBarrierColor;
-	float mouseBarrierBlur;
-
+	struct Barrier {
+		bool draw;
+		float radius;
+		Color color;
+		float blur;
+	} barrier;
+	
 	float offsetBounds;
 
 	int MSAA;
