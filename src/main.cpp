@@ -1,5 +1,5 @@
-#define NOMINMAX
 #include <windows.h>
+#include <immintrin.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <glad/glad.h>
@@ -14,6 +14,7 @@
 #include <random>
 #include <cmath>
 #include <functional>
+#include <algorithm>
 
 #include "star.h"
 #include "desktopUtils.h"
@@ -35,33 +36,34 @@ static float randomUniform(float start, float end) {
 
 // returns a color from a gradient of given colors based on the value of `t` (range: 0-1)
 static Color interpolateColors(const std::vector<Color>& colors, float t) noexcept {
-	if (colors.empty()) return { 0, 0, 0, 1 }; // Default: Black
-	if (colors.size() == 1) return colors[0]; // Only 1 color
+    if (colors.empty()) return {0, 0, 0, 1};
+    if (colors.size() == 1) return colors[0];
 
-	// Clamp t to [0, 1]
-	t = std::max(0.0f, std::min(1.0f, t));
+    t = std::clamp(t, 0.0f, 1.0f);
+    float segmentSize = 1.0f / (colors.size() - 1);
+    int index = static_cast<int>(t / segmentSize);
+    index = std::min(index, static_cast<int>(colors.size()) - 2);
+    float local_t = (t - index * segmentSize) / segmentSize;
 
-	// Calculate segment size (N colors → N-1 segments)
-	float segmentSize = 1.0f / (colors.size() - 1);
+    const auto& c1 = colors[index];
+    const auto& c2 = colors[index + 1];
 
-	// Find the two closest colors
-	int index = static_cast<int>(t / segmentSize);
-	index = std::min(index, static_cast<int>(colors.size()) - 2); // Prevent overflow
+    // Load both colors into XMM registers
+    __m128 v1 = _mm_loadu_ps(c1.data());
+    __m128 v2 = _mm_loadu_ps(c2.data());
 
-	// Compute local interpolation weight (0 ≤ local_t ≤ 1)
-	float local_t = (t - index * segmentSize) / segmentSize;
+    // Broadcast local_t to all 4 components
+    __m128 tvec = _mm_set1_ps(local_t);
 
-	// Get the two colors to blend
-	const auto& c1 = colors[index];
-	const auto& c2 = colors[index + 1];
+    // Perform: result = c1 + (c2 - c1) * t
+    __m128 diff = _mm_sub_ps(v2, v1);
+    __m128 scaled = _mm_mul_ps(diff, tvec);
+    __m128 result = _mm_add_ps(v1, scaled);
 
-	// Linear interpolation (lerp) for each channel
-	float r = std::get<0>(c1) + (std::get<0>(c2) - std::get<0>(c1)) * local_t;
-	float g = std::get<1>(c1) + (std::get<1>(c2) - std::get<1>(c1)) * local_t;
-	float b = std::get<2>(c1) + (std::get<2>(c2) - std::get<2>(c1)) * local_t;
-	float a = std::get<3>(c1) + (std::get<3>(c2) - std::get<3>(c1)) * local_t;
-
-	return { r, g, b, a };
+    // Store result
+    Color out;
+    _mm_storeu_ps(out.data(), result);
+    return out;
 }
 
 // main window
@@ -224,7 +226,7 @@ int main() {
     // otherwise `number of stars * number of segments`
     const size_t numberOfStarVertices     = settings.stars.draw ? starsCount * settings.stars.segments * 3 : 0;
     const size_t numberOfLineVertices     = settings.edges.draw ? settings.stars.count * 18 - 36 : 0;
-    const size_t numberOfTriangleVertices = (((settings.stars.count << 1) - 5) * 3);
+    const size_t numberOfTriangleVertices = settings.stars.count * 6 - 15;
 
     // reserve memory for the vertices
     size_t reserve_count = numberOfTriangleVertices + numberOfStarVertices + numberOfLineVertices;

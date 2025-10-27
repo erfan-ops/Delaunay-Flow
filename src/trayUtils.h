@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Windows.h>
+#include <windows.h>
 
 #define WM_TRAYICON (WM_USER + 20)
 #define TRAY_ICON_ID 1;
