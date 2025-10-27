@@ -148,7 +148,7 @@ inline bool in_circle(
     
     return (dx * (ey * cp - bp * fy) -
             dy * (ex * cp - bp * fx) +
-            ap * (ex * fy - ey * fx)) < -1e-8f;
+            ap * (ex * fy - ey * fx)) < EPSILON;
 }
 
 constexpr float EPSILON = std::numeric_limits<float>::epsilon();
