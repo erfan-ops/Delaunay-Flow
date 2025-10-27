@@ -202,7 +202,7 @@ int main() {
     const float bottomBound = -offsetBounds - 1.0f;
     const float topBound = offsetBounds + 1.0f;
 
-    std::vector<float> coords;
+    std::vector<float> coords; // {x0, y0, x1, y1, x2, y2, ...}
     coords.resize(starsCount << 1);
 
     // filling up the input as well as the stars
@@ -249,8 +249,9 @@ int main() {
             float x3 = (d.coords[cIdx]);
             float y3 = (d.coords[cIdx + 1]);
 
-            float cy = (y1 + y2 + y3) / 3.0f;
-            cy = (cy + 1.0f) * 0.5f;
+            float cy = (y1 + y2 + y3) / 3.0f; // [-1, 1]
+            // linear mapping
+            cy = (cy + 1.0f) * 0.5f; // [0, 1]
 
             Color color = interpolateColors(settings.backGroundColors, cy);
             

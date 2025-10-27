@@ -34,7 +34,8 @@ inline float dist(
     const float ax,
     const float ay,
     const float bx,
-    const float by) {
+    const float by
+) {
     const float dx = ax - bx;
     const float dy = ay - by;
     return dx * dx + dy * dy;
@@ -46,7 +47,8 @@ inline float circumradius(
     const float bx,
     const float by,
     const float cx,
-    const float cy) {
+    const float cy
+) {
     const float dx = bx - ax;
     const float dy = by - ay;
     const float ex = cx - ax;
@@ -72,7 +74,8 @@ inline bool orient(
     const float qx,
     const float qy,
     const float rx,
-    const float ry) {
+    const float ry
+) {
     return (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0.0f;
 }
 
@@ -82,7 +85,8 @@ inline std::pair<float, float> circumcenter(
     const float bx,
     const float by,
     const float cx,
-    const float cy) {
+    const float cy
+) {
     const float dx = bx - ax;
     const float dy = by - ay;
     const float ex = cx - ax;
@@ -129,7 +133,8 @@ inline bool in_circle(
     const float cx,
     const float cy,
     const float px,
-    const float py) {
+    const float py
+) {
     const float dx = ax - px;
     const float dy = ay - py;
     const float ex = bx - px;
