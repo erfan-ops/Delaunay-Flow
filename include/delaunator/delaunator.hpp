@@ -125,6 +125,8 @@ struct compare {
     }
 };
 
+constexpr float EPSILON = std::numeric_limits<float>::epsilon();
+
 inline bool in_circle(
     const float ax,
     const float ay,
@@ -151,7 +153,6 @@ inline bool in_circle(
             ap * (ex * fy - ey * fx)) < EPSILON;
 }
 
-constexpr float EPSILON = std::numeric_limits<float>::epsilon();
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
 inline bool check_pts_equal(float x1, float y1, float x2, float y2) {

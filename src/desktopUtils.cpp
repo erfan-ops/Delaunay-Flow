@@ -22,7 +22,7 @@ static BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
 }
 
 // Function to create and retrieve the WorkerW layer
-HWND CreateWorkerWLayer() {
+static HWND CreateWorkerWLayer() {
     // Get the handle to the Progman window
     HWND progman = FindWindow(L"Progman", nullptr);
     if (!progman) {

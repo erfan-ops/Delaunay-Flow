@@ -9,20 +9,6 @@ void (Star::* Star::moveFunc)(const float, const float, const float, const float
 Star::Star(float x, float y, float speed, float angle)
     : x(x), y(y), orgx(x), orgy(y), speedx(std::cosf(angle)*speed), speedy(std::sinf(angle)*speed) {}
 
-void Star::move(
-    const float dt,
-    const float mouseXNDC,
-    const float mouseYNDC,
-    const float mouseDistance,
-    const float leftBound,
-    const float rightBound,
-    const float bottomBound,
-    const float topBound
-) noexcept
-{
-    (this->*moveFunc)(dt, mouseXNDC, mouseYNDC, mouseDistance, leftBound, rightBound, bottomBound, topBound);
-}
-
 void Star::normalMove(
     const float dt,
     const float mouseXNDC,

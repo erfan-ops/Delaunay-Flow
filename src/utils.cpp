@@ -29,7 +29,6 @@ GLuint shaderUtils::compileShaders(const std::string& vertexPath, const std::str
     // 2. Compile vertex shader
     GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vShaderCode, nullptr);
-    glShaderSource(vertex, 1, &vShaderCode, nullptr);
     glCompileShader(vertex);
     // Check for errors
     GLint success;
