@@ -1,3 +1,13 @@
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef UNICODE
+#define UNICODE
+#endif
+#ifndef _UNICODE
+#define _UNICODE
+#endif
+
 #include <windows.h>
 #include <immintrin.h>
 
@@ -20,12 +30,13 @@
 #include "desktopUtils.h"
 #include "trayUtils.h"
 #include "utils.h"
+#include "settings.h"
 
 // 2 * PI
 constexpr float TAU_F = 6.2831853f;
 
 // generates a random number [start, end)
-static float randomUniform(float start, float end) {
+[[nodiscard]] static float randomUniform(float start, float end) {
 	// Create a random device and a random engine
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -35,32 +46,27 @@ static float randomUniform(float start, float end) {
 }
 
 // returns a color from a gradient of given colors based on the value of `t` (range: 0-1)
-static Color interpolateColors(const std::vector<Color>& colors, float t) noexcept {
-    if (colors.empty()) return {0, 0, 0, 1};
-    if (colors.size() == 1) return colors[0];
+[[nodiscard]] static __forceinline Color interpolateColors(const std::vector<Color>& colors, float t) noexcept {
+    const size_t n = colors.size();
+    if (n == 0)  return {0, 0, 0, 1};
+    if (n == 1)  return colors[0];
+    if (t <= 0.0f) return colors.front();
+    if (t >= 1.0f) return colors.back();
 
-    t = std::clamp(t, 0.0f, 1.0f);
-    float segmentSize = 1.0f / (colors.size() - 1);
-    int index = static_cast<int>(t / segmentSize);
-    index = std::min(index, static_cast<int>(colors.size()) - 2);
-    float local_t = (t - index * segmentSize) / segmentSize;
+    const float scaled = t * static_cast<float>(n - 1);
+    const int index = static_cast<int>(scaled);
+    const float local_t = scaled - index;
 
-    const auto& c1 = colors[index];
-    const auto& c2 = colors[index + 1];
+    const Color& c1 = colors[index];
+    const Color& c2 = colors[index + 1];
 
-    // Load both colors into XMM registers
     __m128 v1 = _mm_loadu_ps(c1.data());
     __m128 v2 = _mm_loadu_ps(c2.data());
-
-    // Broadcast local_t to all 4 components
     __m128 tvec = _mm_set1_ps(local_t);
 
-    // Perform: result = c1 + (c2 - c1) * t
-    __m128 diff = _mm_sub_ps(v2, v1);
-    __m128 scaled = _mm_mul_ps(diff, tvec);
-    __m128 result = _mm_add_ps(v1, scaled);
+    // __m128 result = _mm_fmadd_ps(_mm_sub_ps(v2, v1), tvec, v1); faster when FMA is supported
+    __m128 result = _mm_add_ps(v1, _mm_mul_ps(_mm_sub_ps(v2, v1), tvec));
 
-    // Store result
     Color out;
     _mm_storeu_ps(out.data(), result);
     return out;
@@ -112,12 +118,15 @@ struct Vertex {
     Vertex(float x, float y, Color color) : x(x), y(y), r(color[0]), g(color[1]), b(color[2]), a(color[3]) {}
 };
 
-static inline size_t nextHalfedge(size_t e) noexcept {
+[[nodiscard]] static inline size_t nextHalfedge(size_t e) noexcept {
     return (e % 3 == 2) ? e - 2 : e + 1;
 }
 
 
 int main() {
+    Settings::Load("settings.json");
+    auto& settings = Settings::Instance();
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // Request OpenGL 3.3 Core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -453,6 +462,9 @@ int main() {
     // current wallpaper's path used to set the original wallpaper back when the application is closed
     std::unique_ptr<wchar_t[]> originalWallpaper(GetCurrentWallpaper());
 
+    const float distanceFromMouseSqr = settings.interaction.distanceFromMouse * settings.interaction.distanceFromMouse;
+    const float speedBasedMouseDistanceMultiplierSqr = settings.interaction.speedBasedMouseDistanceMultiplier * settings.interaction.speedBasedMouseDistanceMultiplier;
+
     // settings the window as the desktop background
     SetAsDesktop(hwnd);
 
@@ -482,13 +494,11 @@ int main() {
         mouseYNDC = -(static_cast<float>(mouseY) / Height * 2.0f - 1.0f);
 
         // calculating how much the area around the mouse should expand depending on its speed
-        float mdxm = (std::abs(mouseXNDC - oldMouseXNDC));
-        float mdym = (std::abs(mouseYNDC - oldMouseYNDC));
+        float mdxm = std::abs(mouseXNDC - oldMouseXNDC);
+        float mdym = std::abs(mouseYNDC - oldMouseYNDC);
         float mdm = std::sqrt(mdxm*mdxm + mdym*mdym);
-        // float mdm = mdxm*mdxm + mdym*mdym; // for exponential growth
-        // float mdm = std::log(mdxm*mdxm + mdym*mdym); // for logarithmic growth
         float scale = 1.0f + (mdm * settings.interaction.speedBasedMouseDistanceMultiplier);
-        float mouseBarrierDist = settings.interaction.distanceFromMouse * scale;
+        float mouseBarrierDistSqr = distanceFromMouseSqr * scale * scale;
 
         // clearing the screen
         glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -497,7 +507,7 @@ int main() {
         // moving the stars and updating the triangle input
         for (int i = 0; i < stars.size(); i++) {
             Star& star = stars.at(i);
-            star.move(dt, mouseXNDC, mouseYNDC, mouseBarrierDist, leftBound, rightBound, bottomBound, topBound);
+            star.move(dt, mouseXNDC, mouseYNDC, mouseBarrierDistSqr, leftBound, rightBound, bottomBound, topBound);
 
             int i2 = i << 1;
             coords[i2] = star.getX();

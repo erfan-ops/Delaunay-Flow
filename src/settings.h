@@ -1,50 +1,64 @@
+// settings.h
 #pragma once
-
 #include <string>
 #include <vector>
 #include <array>
 
 using Color = std::array<float, 4>;
 
-// settings structure
-struct Settings {
-	float targetFPS;
-	bool vsync;
-	std::vector<Color> backGroundColors;
+class Settings {
+public:
+    static Settings& Instance() noexcept {
+        static Settings instance;
+        return instance;
+    }
 
-	struct Stars {
-		bool draw;
-		int segments;
-		float radius;
-		int count;
-		float minSpeed;
-		float maxSpeed;
-		Color color;
-	} stars;
+    static void Load(const std::string& filename);
 
-	struct Edges {
-		bool draw;
-		float width;
-		Color color;
-	} edges;
+    // delete copying/moving
+    Settings(const Settings&) = delete;
+    Settings& operator=(const Settings&) = delete;
+    Settings(Settings&&) = delete;
+    Settings& operator=(Settings&&) = delete;
 
-	struct Interaction {
-		bool mouseInteraction;
-		float distanceFromMouse;
-		float speedBasedMouseDistanceMultiplier;
-	} interaction;
+private:
+    Settings() = default;  // private default constructor
+    void loadFromFile(const std::string& filename);
 
-	struct Barrier {
-		bool draw;
-		float radius;
-		Color color;
-		float blur;
-	} barrier;
-	
-	float offsetBounds;
+public:
+    float targetFPS = 0.0f;
+    bool vsync = false;
+    std::vector<Color> backGroundColors;
 
-	int MSAA;
+    struct Stars {
+        bool draw = false;
+        int segments = 0;
+        float radius = 0.0f;
+        int count = 0;
+        float minSpeed = 0.0f;
+        float maxSpeed = 0.0f;
+        Color color{};
+    } stars;
+
+    struct Edges {
+        bool draw = false;
+        float width = 0.0f;
+        Color color{};
+    } edges;
+
+    struct Interaction {
+        bool mouseInteraction = false;
+        float distanceFromMouse = 0.0f;
+        float speedBasedMouseDistanceMultiplier = 0.0f;
+    } interaction;
+
+    struct Barrier {
+        bool draw = false;
+        float radius = 0.0f;
+        Color color{};
+        float blur = 0.0f;
+    } barrier;
+
+    float offsetBounds = 0.0f;
+    int MSAA = 1;
 };
-
-// Function to load settings from a JSON file
-Settings loadSettings(const std::string& filename);

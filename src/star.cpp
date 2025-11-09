@@ -2,8 +2,6 @@
 #include <cmath>
 
 
-static const float mouseKeepDistanceSqr = settings.interaction.distanceFromMouse * settings.interaction.distanceFromMouse;
-
 void (Star::* Star::moveFunc)(const float, const float, const float, const float, const float, const float, const float, const float) noexcept = nullptr;
 
 Star::Star(float x, float y, float speed, float angle)
@@ -13,7 +11,7 @@ void Star::normalMove(
     const float dt,
     const float mouseXNDC,
     const float mouseYNDC,
-    const float mouseDistance,
+    const float mouseDistanceSqr,
     const float leftBound,
     const float rightBound,
     const float bottomBound,
@@ -48,7 +46,7 @@ void Star::moveWithMouse(
     const float dt,
     const float mouseXNDC,
     const float mouseYNDC,
-    const float mouseDistance,
+    const float mouseDistanceSqr,
     const float leftBound,
     const float rightBound,
     const float bottomBound,
@@ -60,10 +58,9 @@ void Star::moveWithMouse(
     float mouseDistanceX = mouseXNDC - this->getX();
     float mouseDistanceY = mouseYNDC - this->getY();
 
-    float mouseDis = std::sqrt(mouseDistanceX * mouseDistanceX + mouseDistanceY * mouseDistanceY);
-    float mouseKeepDistance = mouseDistance;
-    if (mouseDis && mouseDis < mouseKeepDistance) {
-        float ratio = mouseKeepDistance / mouseDis;
+    float mouseDisSqr = mouseDistanceX * mouseDistanceX + mouseDistanceY * mouseDistanceY;
+    if (mouseDisSqr && mouseDisSqr < mouseDistanceSqr) {
+        float ratio = std::sqrt(mouseDistanceSqr / mouseDisSqr);
         this->x = mouseDistanceX + this->x - (mouseDistanceX * ratio);
         this->y = mouseDistanceY + this->y - (mouseDistanceY * ratio);
     }

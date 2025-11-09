@@ -1,44 +1,43 @@
+// settings.cpp
 #include "settings.h"
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+void Settings::Load(const std::string& filename) {
+    Instance().loadFromFile(filename);
+}
 
-Settings loadSettings(const std::string& filename) {
-	std::ifstream file(filename);
-	nlohmann::json j;
-	file >> j;
+void Settings::loadFromFile(const std::string& filename) {
+    std::ifstream file(filename);
+    nlohmann::json j;
+    file >> j;
 
-	Settings settings;
+    targetFPS = j["fps"];
+    vsync = j["vsync"];
+    backGroundColors = j["background-colors"].get<std::vector<Color>>();
 
-	settings.targetFPS = j["fps"];
-	settings.vsync = j["vsync"];
+    stars.draw = j["stars"]["draw"];
+    stars.segments = j["stars"]["segments"];
+    stars.radius = j["stars"]["radius"];
+    stars.count = j["stars"]["count"];
+    stars.minSpeed = j["stars"]["min-speed"];
+    stars.maxSpeed = j["stars"]["max-speed"];
+    stars.color = j["stars"]["color"].get<Color>();
 
-	settings.backGroundColors = j["background-colors"].get<std::vector<Color>>();
+    edges.draw = j["edges"]["draw"];
+    edges.width = j["edges"]["width"];
+    edges.color = j["edges"]["color"].get<Color>();
 
-	settings.stars.draw = j["stars"]["draw"];
-	settings.stars.segments = j["stars"]["segments"];
-	settings.stars.radius = j["stars"]["radius"];
-	settings.stars.count = j["stars"]["count"];
-	settings.stars.minSpeed = j["stars"]["min-speed"];
-	settings.stars.maxSpeed = j["stars"]["max-speed"];
-	settings.stars.color = j["stars"]["color"].get<Color>();
+    interaction.mouseInteraction = j["interaction"]["mouse-interaction"];
+    interaction.distanceFromMouse = j["interaction"]["distance-from-mouse"];
+    interaction.speedBasedMouseDistanceMultiplier =
+        j["interaction"]["speed-based-mouse-distance-multiplier"];
 
-	settings.edges.draw = j["edges"]["draw"];
-	settings.edges.width =j["edges"]["width"];
-	settings.edges.color = j["edges"]["color"].get<Color>();
+    barrier.draw = j["mouse-barrier"]["draw"];
+    barrier.radius = j["mouse-barrier"]["radius"];
+    barrier.color = j["mouse-barrier"]["color"].get<Color>();
+    barrier.blur = j["mouse-barrier"]["blur"];
 
-	settings.interaction.mouseInteraction = j["interaction"]["mouse-interaction"];
-	settings.interaction.distanceFromMouse = j["interaction"]["distance-from-mouse"];
-	settings.interaction.speedBasedMouseDistanceMultiplier = j["interaction"]["speed-based-mouse-distance-multiplier"];
-
-	settings.barrier.draw = j["mouse-barrier"]["draw"];
-	settings.barrier.radius = j["mouse-barrier"]["radius"];
-	settings.barrier.color = j["mouse-barrier"]["color"].get<Color>();
-	settings.barrier.blur = j["mouse-barrier"]["blur"];
-
-	settings.offsetBounds = j["offset-bounds"];
-
-	settings.MSAA = j["MSAA"];
-
-	return settings;
+    offsetBounds = j["offset-bounds"];
+    MSAA = j["MSAA"];
 }
