@@ -33,7 +33,11 @@
 #include "settings.h"
 
 // 2 * PI
-constexpr float TAU_F = 6.2831853f;
+constinit float TAU_F = 6.2831853f;
+
+std::vector<Color> colors_global;
+Color colors_first;
+float colors_size_1;
 
 // generates a random number [start, end)
 [[nodiscard]] static float randomUniform(float start, float end) {
@@ -45,31 +49,39 @@ constexpr float TAU_F = 6.2831853f;
 	return static_cast<float>(dist(gen)); // Generate the random number
 }
 
-// returns a color from a gradient of given colors based on the value of `t` (range: 0-1)
-[[nodiscard]] static __forceinline Color interpolateColors(const std::vector<Color>& colors, float t) noexcept {
-    const size_t n = colors.size();
-    if (n == 0)  return {0, 0, 0, 1};
-    if (n == 1)  return colors[0];
-    if (t <= 0.0f) return colors.front();
-    if (t >= 1.0f) return colors.back();
+[[nodiscard]] static Color interpolateNone(float) noexcept { return {0, 0, 0, 1}; }
+[[nodiscard]] static Color interpolateSingle(float) noexcept { return colors_first; }
 
-    const float scaled = t * static_cast<float>(n - 1);
+// returns a color from a gradient of given colors based on the value of `t` (range: 0-1)
+[[nodiscard]] static Color interpolateMulti(float t) noexcept {
+    if (t <= 0.0f) return colors_global.front();
+    if (t >= 1.0f) return colors_global.back();
+
+    const float scaled = t * colors_size_1;
     const int index = static_cast<int>(scaled);
     const float local_t = scaled - index;
 
-    const Color& c1 = colors[index];
-    const Color& c2 = colors[index + 1];
+    const Color& c1 = colors_global[index];
+    const Color& c2 = colors_global[index + 1];
 
     __m128 v1 = _mm_loadu_ps(c1.data());
     __m128 v2 = _mm_loadu_ps(c2.data());
     __m128 tvec = _mm_set1_ps(local_t);
 
-    // __m128 result = _mm_fmadd_ps(_mm_sub_ps(v2, v1), tvec, v1); faster when FMA is supported
-    __m128 result = _mm_add_ps(v1, _mm_mul_ps(_mm_sub_ps(v2, v1), tvec));
+    __m128 result = _mm_fmadd_ps(_mm_sub_ps(v2, v1), tvec, v1); // faster when FMA is supported
+    // __m128 result = _mm_add_ps(v1, _mm_mul_ps(_mm_sub_ps(v2, v1), tvec));
 
     Color out;
     _mm_storeu_ps(out.data(), result);
     return out;
+}
+
+inline static Color (*interpolateFn)(float) = interpolateNone;
+
+void initInterpolation(const std::vector<Color>& colors) {
+    if (colors.empty()) interpolateFn = interpolateNone;
+    else if (colors.size() == 1) interpolateFn = interpolateSingle;
+    else interpolateFn = interpolateMulti;
 }
 
 // main window
@@ -126,6 +138,9 @@ struct Vertex {
 int main() {
     Settings::Load("settings.json");
     auto& settings = Settings::Instance();
+    colors_global = settings.backGroundColors;
+    colors_first = colors_global[0];
+    colors_size_1 = static_cast<float>(colors_global.size() - 1ull);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // Request OpenGL 3.3 Core
@@ -262,7 +277,7 @@ int main() {
             // linear mapping
             cy = (cy + 1.0f) * 0.5f; // [0, 1]
 
-            Color color = interpolateColors(settings.backGroundColors, cy);
+            Color color = interpolateFn(cy);
             
             vertices.emplace_back(x1, y1, color);
             vertices.emplace_back(x2, y2, color);
@@ -463,7 +478,8 @@ int main() {
     std::unique_ptr<wchar_t[]> originalWallpaper(GetCurrentWallpaper());
 
     const float distanceFromMouseSqr = settings.interaction.distanceFromMouse * settings.interaction.distanceFromMouse;
-    const float speedBasedMouseDistanceMultiplierSqr = settings.interaction.speedBasedMouseDistanceMultiplier * settings.interaction.speedBasedMouseDistanceMultiplier;
+
+    initInterpolation(colors_global);
 
     // settings the window as the desktop background
     SetAsDesktop(hwnd);

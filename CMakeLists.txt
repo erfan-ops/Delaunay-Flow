@@ -78,7 +78,6 @@ if(MSVC)
         _UNICODE
         UNICODE
         NOMINMAX              # Prevent macros interfering with std::min/max
-        # WIN32_LEAN_AND_MEAN   # Reduce Windows.h bloat
     )
 
     # Compiler optimization settings per configuration
