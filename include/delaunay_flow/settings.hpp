@@ -1,10 +1,11 @@
-// settings.h
-#pragma once
+#ifndef DELAUNAY_FLOW_SETTINGS_HPP
+#define DELAUNAY_FLOW_SETTINGS_HPP
+
+#include "types.hpp"
 #include <string>
 #include <vector>
-#include <array>
 
-using Color = std::array<float, 4>;
+namespace delaunay_flow {
 
 class Settings {
 public:
@@ -15,14 +16,13 @@ public:
 
     static void Load(const std::string& filename);
 
-    // delete copying/moving
     Settings(const Settings&) = delete;
     Settings& operator=(const Settings&) = delete;
     Settings(Settings&&) = delete;
     Settings& operator=(Settings&&) = delete;
 
 private:
-    Settings() = default;  // private default constructor
+    Settings() = default;
     void loadFromFile(const std::string& filename);
 
 public:
@@ -62,3 +62,7 @@ public:
     float offsetBounds = 0.0f;
     int MSAA = 1;
 };
+
+}  // namespace delaunay_flow
+
+#endif  // DELAUNAY_FLOW_SETTINGS_HPP

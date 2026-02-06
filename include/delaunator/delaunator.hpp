@@ -153,6 +153,7 @@ inline bool in_circle(
             ap * (ex * fy - ey * fx)) < EPSILON;
 }
 
+
 constexpr std::size_t INVALID_INDEX = std::numeric_limits<std::size_t>::max();
 
 inline bool check_pts_equal(float x1, float y1, float x2, float y2) {

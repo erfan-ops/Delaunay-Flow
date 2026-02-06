@@ -59,7 +59,7 @@ static PFNWGLGETPROCADDRESSPROC_PRIVATE gladGetProcAddressPtr;
 static
 int open_gl(void) {
 #ifndef IS_UWP
-    libGL = LoadLibraryW(L"opengl32.dll");
+    libGL = LoadLibrary(L"opengl32.dll");
     if(libGL != NULL) {
         void (* tmp)(void);
         tmp = (void(*)(void)) GetProcAddress(libGL, "wglGetProcAddress");

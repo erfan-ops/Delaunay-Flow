@@ -1,7 +1,8 @@
-// settings.cpp
-#include "settings.h"
+#include <delaunay_flow/settings.hpp>
 #include <fstream>
 #include <nlohmann/json.hpp>
+
+namespace delaunay_flow {
 
 void Settings::Load(const std::string& filename) {
     Instance().loadFromFile(filename);
@@ -41,3 +42,5 @@ void Settings::loadFromFile(const std::string& filename) {
     offsetBounds = j["offset-bounds"];
     MSAA = j["MSAA"];
 }
+
+}  // namespace delaunay_flow

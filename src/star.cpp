@@ -1,76 +1,66 @@
-#include "star.h"
+#include <delaunay_flow/star.hpp>
 #include <cmath>
 
+namespace delaunay_flow {
 
-void (Star::* Star::moveFunc)(const float, const float, const float, const float, const float, const float, const float, const float) noexcept = nullptr;
+Star::MoveFunc Star::moveFunc_ = nullptr;
 
 Star::Star(float x, float y, float speed, float angle)
-    : x(x), y(y), orgx(x), orgy(y), speedx(std::cosf(angle)*speed), speedy(std::sinf(angle)*speed) {}
+    : orgx_(x), orgy_(y), x_(x), y_(y),
+      speedx_(std::cosf(angle) * speed),
+      speedy_(std::sinf(angle) * speed) {}
 
-void Star::normalMove(
-    const float dt,
-    const float mouseXNDC,
-    const float mouseYNDC,
-    const float mouseDistanceSqr,
-    const float leftBound,
-    const float rightBound,
-    const float bottomBound,
-    const float topBound
-) noexcept
-{
-    this->orgx += this->speedx * dt;
-    this->orgy += this->speedy * dt;
+void Star::move(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
+                float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
+    (this->*moveFunc_)(dt, mouseXNDC, mouseYNDC, mouseDistanceSqr,
+                       leftBound, rightBound, bottomBound, topBound);
+}
 
-    float xdis = this->orgx - this->x;
-    float ydis = this->orgy - this->y;
+void Star::normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
+                      float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
+    orgx_ += speedx_ * dt;
+    orgy_ += speedy_ * dt;
 
-    this->x += xdis * dt;
-    this->y += ydis * dt;
+    float xdis = orgx_ - x_;
+    float ydis = orgy_ - y_;
 
-    if (this->orgx <= leftBound) {
-        this->speedx = std::abs(this->speedx);
-    }
-    else if (this->orgx >= rightBound) {
-        this->speedx = -std::abs(this->speedx);
+    x_ += xdis * dt;
+    y_ += ydis * dt;
+
+    if (orgx_ <= leftBound) {
+        speedx_ = std::abs(speedx_);
+    } else if (orgx_ >= rightBound) {
+        speedx_ = -std::abs(speedx_);
     }
 
-    if (this->orgy <= bottomBound) {
-        this->speedy = std::abs(this->speedy);
-    }
-    else if (this->orgy >= topBound) {
-        this->speedy = -std::abs(this->speedy);
+    if (orgy_ <= bottomBound) {
+        speedy_ = std::abs(speedy_);
+    } else if (orgy_ >= topBound) {
+        speedy_ = -std::abs(speedy_);
     }
 }
 
-void Star::moveWithMouse(
-    const float dt,
-    const float mouseXNDC,
-    const float mouseYNDC,
-    const float mouseDistanceSqr,
-    const float leftBound,
-    const float rightBound,
-    const float bottomBound,
-    const float topBound
-) noexcept
-{
-    this->normalMove(dt, 0.0f, 0.0f, 0.0f, leftBound, rightBound, bottomBound, topBound);
+void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
+                         float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
+    normalMove(dt, 0.0f, 0.0f, 0.0f, leftBound, rightBound, bottomBound, topBound);
 
-    float mouseDistanceX = mouseXNDC - this->getX();
-    float mouseDistanceY = mouseYNDC - this->getY();
+    float mouseDistanceX = mouseXNDC - getX();
+    float mouseDistanceY = mouseYNDC - getY();
 
     float mouseDisSqr = mouseDistanceX * mouseDistanceX + mouseDistanceY * mouseDistanceY;
-    if (mouseDisSqr && mouseDisSqr < mouseDistanceSqr) {
+    if (mouseDisSqr != 0.0f && mouseDisSqr < mouseDistanceSqr) {
         float ratio = std::sqrt(mouseDistanceSqr / mouseDisSqr);
-        this->x = mouseDistanceX + this->x - (mouseDistanceX * ratio);
-        this->y = mouseDistanceY + this->y - (mouseDistanceY * ratio);
+        x_ = mouseDistanceX + x_ - (mouseDistanceX * ratio);
+        y_ = mouseDistanceY + y_ - (mouseDistanceY * ratio);
     }
 }
 
-void Star::init(const bool moveFromMouse) noexcept {
+void Star::init(bool moveFromMouse) noexcept {
     if (moveFromMouse) {
-		Star::moveFunc = &Star::moveWithMouse;
-	}
-	else {
-		Star::moveFunc = &Star::normalMove;
-	}
+        moveFunc_ = &Star::moveWithMouse;
+    } else {
+        moveFunc_ = &Star::normalMove;
+    }
 }
+
+}  // namespace delaunay_flow
