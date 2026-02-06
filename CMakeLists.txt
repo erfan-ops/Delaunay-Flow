@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.30)
+
+set(CMAKE_TOOLCHAIN_FILE "E:/coding/C/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+set(VCPKG_TARGET_TRIPLET x64-windows-static CACHE STRING "")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 project(Delaunay-Flow LANGUAGES CXX C)
 
 # ============================================================
@@ -114,14 +119,19 @@ endif()
 # ============================================================
 # Linking
 # ============================================================
-target_link_libraries(Delaunay-Flow PRIVATE
-    wallpaper_host_static_mt.lib
-    opengl32.lib
-    glfw3_mt.lib
+find_package(OpenGL REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 
+add_library(wallpaper_host STATIC IMPORTED)
+set_target_properties(wallpaper_host PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/wallpaper_host_static_mt.lib"
 )
 
-target_link_directories(Delaunay-Flow PRIVATE lib)
+target_link_libraries(Delaunay-Flow PRIVATE
+    wallpaper_host
+    OpenGL::GL
+    glfw
+)
 
 
 

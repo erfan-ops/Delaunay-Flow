@@ -3,3 +3,6 @@
 /Delaunay-Flow
 /build
 /.vscode
+
+/vcpkg_installed
+CMakeUserPresets.json

@@ -1,0 +1,7 @@
+{
+  "name": "delaunay-flow",
+  "version": "1.0.0",
+  "dependencies": [
+    "glfw3"
+  ]
+}
