@@ -24,6 +24,14 @@ constexpr UINT WM_TRAY_SHOW_MENU = WM_USER + 21;
 constexpr UINT DEFAULT_TRAY_ICON_ID = 1;
 
 /**
+ * Starts the tray menu UI thread.
+ * Must be called once during application startup.
+ *
+ * @param ownerHwnd The main application window that should receive WM_COMMAND.
+ */
+WALLPAPER_HOST_API void StartTrayMenuThread(HWND ownerHwnd);
+
+/**
  * Registers / adds a tray icon for 'hwnd'. The caller retains ownership of 'icon'.
  *
  * @param hwnd Window that receives tray notifications (WM_TRAYICON).
@@ -49,9 +57,6 @@ WALLPAPER_HOST_API bool UnregisterIcon(HWND hwnd, UINT iconId = DEFAULT_TRAY_ICO
  * WM_TRAY_SHOW_MENU to the window; the window (on the UI thread) will perform
  * TrackPopupMenu and post WM_COMMAND if an item is chosen.
  *
- * The window's message loop **must** call tray::HandleWindowMessage(...) from
- * its WindowProc to process WM_TRAY_SHOW_MENU (the library supplies the handler).
- *
  * @param hwnd      Owner window (must be the same HWND used with RegisterIcon).
  * @param menu      HMENU to display. The menu is owned by the caller and must remain valid
  *                  until the window processes WM_TRAY_SHOW_MENU. (Typical: create menu
@@ -59,19 +64,6 @@ WALLPAPER_HOST_API bool UnregisterIcon(HWND hwnd, UINT iconId = DEFAULT_TRAY_ICO
  * @param screenPos Position in screen coordinates where the menu should appear.
  */
 WALLPAPER_HOST_API void PostShowContextMenuAsync(HWND hwnd, HMENU menu, POINT screenPos);
-
-/**
- * Call this at the top of your WindowProc to allow the library to handle internal messages.
- *
- * Example:
- *   LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
- *       if (wallpaper::tray::HandleWindowMessage(hwnd, msg, wp, lp)) return 0;
- *       ...
- *   }
- *
- * @return true if the function handled the message (app should return 0), false otherwise.
- */
-WALLPAPER_HOST_API bool HandleWindowMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 /**
  * Helper to build a simple default popup menu. Caller should destroy the menu via DestroyMenu().

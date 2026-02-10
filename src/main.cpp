@@ -31,34 +31,62 @@ using namespace delaunay_flow;
 
 namespace {
 
-[[nodiscard]] float randomUniform(float start, float end) {
+[[nodiscard]] static float randomUniform(float start, float end) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dist(start, end);
     return static_cast<float>(dist(gen));
 }
 
-[[nodiscard]] inline size_t nextHalfedge(size_t e) noexcept {
+[[nodiscard]] static inline size_t nextHalfedge(size_t e) noexcept {
     return (e % 3 == 2) ? e - 2 : e + 1;
 }
 
 }  // namespace
 
+static constinit bool attachment = true;
 GLFWwindow* g_window = nullptr;
 static HMENU g_trayMenu = nullptr;
 
-static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    // Let the tray library handle its internal messages first
-    if (wallpaper::tray::HandleWindowMessage(hwnd, msg, wParam, lParam)) {
-        return 0;
+struct StarSystem {
+    std::vector<Star> stars;
+
+    float left, right, bottom, top;
+    const Settings& settings;
+
+    StarSystem(const Settings& s,
+               float l, float r, float b, float t)
+        : settings(s), left(l), right(r), bottom(b), top(t)
+    {
+        reset();
     }
 
+    void reset() {
+        stars.clear();
+        stars.reserve(settings.stars.count);
+
+        for (int i = 0; i < settings.stars.count; ++i) {
+            float x = randomUniform(left, right);
+            float y = randomUniform(bottom, top);
+            float speed = randomUniform(settings.stars.minSpeed,
+                                        settings.stars.maxSpeed);
+            float angle = randomUniform(0, TAU_F);
+            stars.emplace_back(x, y, speed, angle);
+        }
+    }
+};
+
+static std::atomic<bool> g_restartRequested = false;
+
+static LRESULT WINAPI WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case wallpaper::tray::WM_TRAYICON:
         if (lParam == WM_RBUTTONUP) {
             if (!g_trayMenu) {
                 g_trayMenu = CreatePopupMenu();
-                AppendMenu(g_trayMenu, MF_STRING, 1, L"Quit");
+                AppendMenu(g_trayMenu, MF_STRING, 1003, L"Detach");
+                AppendMenu(g_trayMenu, MF_STRING, 1002, L"Restart");
+                AppendMenu(g_trayMenu, MF_STRING, 1001, L"Quit");
             }
 
             POINT cursorPos;
@@ -69,8 +97,23 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
 
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
-        case 1: // Quit
+        case 1001: // Quit
             glfwSetWindowShouldClose(g_window, GLFW_TRUE);
+            break;
+        case 1002: // Restart
+            g_restartRequested.store(true, std::memory_order_relaxed);
+            break;
+        case 1003: // Attach / Detach
+            if (attachment) {
+                wallpaper::desktop::DetachWindowFromDesktop(hwnd);
+                attachment = false;
+                ModifyMenu(g_trayMenu, 1003, MF_STRING, 1003, L"Attach");
+            }
+            else {
+                wallpaper::desktop::AttachWindowToDesktop(hwnd);
+                attachment = true;
+                ModifyMenu(g_trayMenu, 1003, MF_STRING, 1003, L"Detach");
+            }
             break;
         }
         break;
@@ -102,7 +145,10 @@ int main() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    glfwWindowHint(GLFW_SAMPLES, settings.MSAA);
+
+    if (settings.MSAA > 0) {
+        glfwWindowHint(GLFW_SAMPLES, settings.MSAA);
+    }
 
     g_window = glfwCreateWindow(iWidth, iHeight, "Delaunay Flow", nullptr, nullptr);
     if (!g_window) {
@@ -112,6 +158,7 @@ int main() {
     }
 
     HWND hwnd = glfwGetWin32Window(g_window);
+    wallpaper::tray::StartTrayMenuThread(hwnd);
     SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(WindowProc));
 
     using GameTickFunc = void (*)(float, float, float&);
@@ -147,28 +194,23 @@ int main() {
 
     const int starsCount = settings.stars.count;
 
-    std::vector<Star> stars;
-    stars.reserve(static_cast<size_t>(starsCount));
-
     const float offsetBounds = settings.offsetBounds;
     const float leftBound = (-offsetBounds - 1.0f) * aspectRatio;
     const float rightBound = (offsetBounds + 1.0f) * aspectRatio;
     const float bottomBound = -offsetBounds - 1.0f;
     const float topBound = offsetBounds + 1.0f;
 
-    std::vector<float> coords;
+    // std::vector<Star> stars;
+    StarSystem starSystem(settings, leftBound, rightBound, bottomBound, topBound);
+
+
+    std::vector<double> coords;
     coords.resize(static_cast<size_t>(starsCount) << 1);
 
-    for (int i = 0; i < starsCount; i++) {
-        float x = randomUniform(leftBound, rightBound);
-        float y = randomUniform(bottomBound, topBound);
-        float speed = randomUniform(settings.stars.minSpeed, settings.stars.maxSpeed);
-        float angle = randomUniform(0, TAU_F);
-        stars.emplace_back(x, y, speed, angle);
-
-        size_t i2 = static_cast<size_t>(i) << 1;
-        coords[i2] = x;
-        coords[i2 + 1] = y;
+    for (size_t i = 0; i < starSystem.stars.size(); ++i) {
+        size_t i2 = i << 1;
+        coords[i2]     = starSystem.stars[i].getX();
+        coords[i2 + 1] = starSystem.stars[i].getY();
     }
 
     delaunator::Delaunator delaunator(coords);
@@ -189,12 +231,12 @@ int main() {
             size_t bIdx = d.triangles[i + 1] << 1;
             size_t cIdx = d.triangles[i + 2] << 1;
 
-            float x1 = d.coords[aIdx];
-            float y1 = d.coords[aIdx + 1];
-            float x2 = d.coords[bIdx];
-            float y2 = d.coords[bIdx + 1];
-            float x3 = d.coords[cIdx];
-            float y3 = d.coords[cIdx + 1];
+            float x1 = static_cast<float>(d.coords[aIdx]);
+            float y1 = static_cast<float>(d.coords[aIdx + 1]);
+            float x2 = static_cast<float>(d.coords[bIdx]);
+            float y2 = static_cast<float>(d.coords[bIdx + 1]);
+            float x3 = static_cast<float>(d.coords[cIdx]);
+            float y3 = static_cast<float>(d.coords[cIdx + 1]);
 
             float cy = (y1 + y2 + y3) / 3.0f;
             cy = (cy + 1.0f) * 0.5f;
@@ -230,7 +272,7 @@ int main() {
 
         insertStarsFunc = [&]() {
             const int segs = settings.stars.segments;
-            for (auto& star : stars) {
+            for (auto& star : starSystem.stars) {
                 float centerX = star.getX();
                 float centerY = star.getY();
 
@@ -265,10 +307,10 @@ int main() {
                     size_t ia = d.triangles[i] << 1;
                     size_t ib = d.triangles[nextHalfedge(i)] << 1;
 
-                    float x1 = d.coords[ia];
-                    float y1 = d.coords[ia + 1];
-                    float x2 = d.coords[ib];
-                    float y2 = d.coords[ib + 1];
+                    float x1 = static_cast<float>(d.coords[ia]);
+                    float y1 = static_cast<float>(d.coords[ia + 1]);
+                    float x2 = static_cast<float>(d.coords[ib]);
+                    float y2 = static_cast<float>(d.coords[ib + 1]);
 
                     float dx = x2 - x1;
                     float dy = y2 - y1;
@@ -398,14 +440,25 @@ int main() {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        for (size_t i = 0; i < stars.size(); i++) {
-            Star& star = stars[i];
+        if (g_restartRequested.exchange(false)) {
+            starSystem.reset();
+
+            // rebuild coords immediately
+            for (size_t i = 0; i < starSystem.stars.size(); ++i) {
+                size_t i2 = i << 1;
+                coords[i2]     = starSystem.stars[i].getX();
+                coords[i2 + 1] = starSystem.stars[i].getY();
+            }
+        }
+
+        for (size_t i = 0; i < starSystem.stars.size(); i++) {
+            Star& star = starSystem.stars[i];
             star.move(dt, mouseXNDC, mouseYNDC, mouseBarrierDistSqr,
                      leftBound, rightBound, bottomBound, topBound);
 
             size_t i2 = i << 1;
-            coords[i2] = star.getX();
-            coords[i2 + 1] = star.getY();
+            coords[i2] = static_cast<double>(star.getX());
+            coords[i2 + 1] = static_cast<double>(star.getY());
         }
 
         delaunator::Delaunator delaunator(coords);
@@ -435,7 +488,9 @@ int main() {
         tickFunc(dt, stepInterval, fractionalTime);
     }
 
-    wallpaper::desktop::DetachWindowFromDesktop(hwnd);
+    if (attachment) {
+        wallpaper::desktop::DetachWindowFromDesktop(hwnd);
+    }
     SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, static_cast<PVOID>(originalWallpaper.data()),
                          SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
