@@ -2,10 +2,11 @@
   "version": 2,
   "configurePresets": [
     {
-      "name": "vcpkg",
-      "binaryDir": "E:/coding/C/Delaunay-Flow/build",
+      "name": "ci",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": "E:/coding/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     }
   ]
