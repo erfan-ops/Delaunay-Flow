@@ -26,6 +26,14 @@ namespace desktop {
 WALLPAPER_HOST_API std::wstring GetCurrentWallpaperPath();
 
 /**
+ * sets the current desktop wallpaper.
+ *
+ * @param path absolute path of an image.
+ * @return true on success.
+ */
+WALLPAPER_HOST_API bool SetWallpaper(wchar_t* path);
+
+/**
  * Attaches the specified top-level window (hwnd) to the Windows desktop by
  * parenting it to the WorkerW window used for the wallpaper. On success, the
  * window behaves like a wallpaper window (behind icons).

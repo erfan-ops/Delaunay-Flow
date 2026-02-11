@@ -45,6 +45,7 @@ namespace {
 }  // namespace
 
 static constinit bool attachment = true;
+std::wstring g_originalWallpaper;
 GLFWwindow* g_window = nullptr;
 static HMENU g_trayMenu = nullptr;
 
@@ -106,10 +107,13 @@ static LRESULT WINAPI WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         case 1003: // Attach / Detach
             if (attachment) {
                 wallpaper::desktop::DetachWindowFromDesktop(hwnd);
+                SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, static_cast<PVOID>(g_originalWallpaper.data()),
+                                     SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
                 attachment = false;
                 ModifyMenu(g_trayMenu, 1003, MF_STRING, 1003, L"Attach");
             }
             else {
+                glfwSetWindowPos(g_window, 0, 0);
                 wallpaper::desktop::AttachWindowToDesktop(hwnd);
                 attachment = true;
                 ModifyMenu(g_trayMenu, 1003, MF_STRING, 1003, L"Detach");
@@ -405,7 +409,7 @@ int main() {
     HICON hIcon = LoadIconFromResource();
     wallpaper::tray::RegisterIcon(hwnd, hIcon, L"Just a Simple Icon");
 
-    std::wstring originalWallpaper = wallpaper::desktop::GetCurrentWallpaperPath();
+    g_originalWallpaper = wallpaper::desktop::GetCurrentWallpaperPath();
 
     const float distanceFromMouseSqr =
         settings.interaction.distanceFromMouse * settings.interaction.distanceFromMouse;
@@ -491,7 +495,7 @@ int main() {
     if (attachment) {
         wallpaper::desktop::DetachWindowFromDesktop(hwnd);
     }
-    SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, static_cast<PVOID>(originalWallpaper.data()),
+    SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, static_cast<PVOID>(g_originalWallpaper.data()),
                          SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
     if (g_trayMenu) DestroyMenu(g_trayMenu);
