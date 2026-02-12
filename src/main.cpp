@@ -427,7 +427,7 @@ int main() {
 
         glfwGetCursorPos(g_window, &mouseX, &mouseY);
         mouseXNDC = (static_cast<float>(mouseX) / width * 2.0f - 1.0f) * aspectRatio;
-        mouseYNDC = -(static_cast<float>(mouseY) / height * 2.0f - 1.0f); 
+        mouseYNDC = -(static_cast<float>(mouseY) / height * 2.0f - 1.0f);
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);

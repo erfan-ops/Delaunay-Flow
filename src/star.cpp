@@ -47,9 +47,18 @@ void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouse
     float mouseDistanceX = mouseXNDC - getX();
     float mouseDistanceY = mouseYNDC - getY();
 
-    float mouseDisSqr = mouseDistanceX * mouseDistanceX + mouseDistanceY * mouseDistanceY;
+    // --- Slight ellipse deformation ---
+    constexpr float ellipseFactor = 1.015f;  // 1.0f = perfect circle
+
+    float scaledX = mouseDistanceX * ellipseFactor;
+    float scaledY = mouseDistanceY;
+
+    float mouseDisSqr = scaledX * scaledX + scaledY * scaledY;
+
     if (mouseDisSqr != 0.0f && mouseDisSqr < mouseDistance * mouseDistance) {
+
         float ratio = mouseDistance / std::sqrt(mouseDisSqr);
+
         x_ = mouseDistanceX + x_ - (mouseDistanceX * ratio);
         y_ = mouseDistanceY + y_ - (mouseDistanceY * ratio);
     }

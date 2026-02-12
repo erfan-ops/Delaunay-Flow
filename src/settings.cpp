@@ -174,10 +174,10 @@ void Settings::loadFromFile(const std::string& filename)
                 "Color must contain exactly 4 numbers (R, G, B, A).");
         barrier.color = jb["color"].get<Color>();
 
-        if (!jb["blur"].is_number() || jb["blur"] < 0.0f)
+        if (!jb["blur"].is_number() || jb["blur"] <= 0.0f)
             throw std::runtime_error(
                 "Invalid \"mouse-barrier.blur\" value.\n"
-                "It cannot be negative.");
+                "It must be greater than 0.");
         barrier.blur = jb["blur"];
 
         // --- offset-bounds ---
