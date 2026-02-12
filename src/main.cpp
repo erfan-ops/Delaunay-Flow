@@ -45,8 +45,8 @@ namespace {
 }  // namespace
 
 static constinit bool attachment = true;
-std::wstring g_originalWallpaper;
-GLFWwindow* g_window = nullptr;
+static std::wstring g_originalWallpaper;
+static GLFWwindow* g_window = nullptr;
 static HMENU g_trayMenu = nullptr;
 
 struct StarSystem {
@@ -126,7 +126,7 @@ static LRESULT WINAPI WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-HICON LoadIconFromResource() { return static_cast<HICON>(LoadImage( GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE)); }
+[[nodiscard]] inline static HICON LoadIconFromResource() { return static_cast<HICON>(LoadImage( GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE)); }
 
 int main() {
     Settings::Load("settings.json");
@@ -207,7 +207,7 @@ int main() {
     // std::vector<Star> stars;
     StarSystem starSystem(settings, leftBound, rightBound, bottomBound, topBound);
 
-
+    
     std::vector<double> coords;
     coords.resize(static_cast<size_t>(starsCount) << 1);
 
@@ -400,7 +400,6 @@ int main() {
 
     double mouseX, mouseY;
     float mouseXNDC, mouseYNDC;
-    float oldMouseXNDC, oldMouseYNDC;
 
     const float stepInterval = 1.0f / settings.targetFPS;
     float dt = 0.0f;
@@ -410,16 +409,13 @@ int main() {
     wallpaper::tray::RegisterIcon(hwnd, hIcon, L"Just a Simple Icon");
 
     g_originalWallpaper = wallpaper::desktop::GetCurrentWallpaperPath();
-
-    const float distanceFromMouseSqr =
-        settings.interaction.distanceFromMouse * settings.interaction.distanceFromMouse;
-
-    wallpaper::desktop::AttachWindowToDesktop(hwnd);
-    glfwShowWindow(g_window);
-
+    
     glfwGetCursorPos(g_window, &mouseX, &mouseY);
     mouseXNDC = static_cast<float>(mouseX) / width * 2.0f - 1.0f;
     mouseYNDC = -(static_cast<float>(mouseY) / height * 2.0f - 1.0f);
+
+    wallpaper::desktop::AttachWindowToDesktop(hwnd);
+    glfwShowWindow(g_window);
 
     auto newF = std::chrono::high_resolution_clock::now();
     auto oldF = std::chrono::high_resolution_clock::now();
@@ -429,17 +425,9 @@ int main() {
         newF = std::chrono::high_resolution_clock::now();
         dt = std::chrono::duration<float>(newF - oldF).count();
 
-        oldMouseXNDC = mouseXNDC;
-        oldMouseYNDC = mouseYNDC;
         glfwGetCursorPos(g_window, &mouseX, &mouseY);
         mouseXNDC = (static_cast<float>(mouseX) / width * 2.0f - 1.0f) * aspectRatio;
-        mouseYNDC = -(static_cast<float>(mouseY) / height * 2.0f - 1.0f);
-
-        float mdxm = std::abs(mouseXNDC - oldMouseXNDC);
-        float mdym = std::abs(mouseYNDC - oldMouseYNDC);
-        float mdm = std::sqrt(mdxm * mdxm + mdym * mdym);
-        float scale = 1.0f + (mdm * settings.interaction.speedBasedMouseDistanceMultiplier);
-        float mouseBarrierDistSqr = distanceFromMouseSqr * scale * scale;
+        mouseYNDC = -(static_cast<float>(mouseY) / height * 2.0f - 1.0f); 
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -457,7 +445,7 @@ int main() {
 
         for (size_t i = 0; i < starSystem.stars.size(); i++) {
             Star& star = starSystem.stars[i];
-            star.move(dt, mouseXNDC, mouseYNDC, mouseBarrierDistSqr,
+            star.move(dt, mouseXNDC, mouseYNDC, settings.interaction.distanceFromMouse,
                      leftBound, rightBound, bottomBound, topBound);
 
             size_t i2 = i << 1;

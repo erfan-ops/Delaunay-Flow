@@ -1,6 +1,25 @@
 #include <delaunay_flow/settings.hpp>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <Windows.h>
+
+
+static void showError(const std::string& msg)
+{
+    MessageBoxA(nullptr, msg.c_str(), "Settings Load Error", MB_OK | MB_ICONERROR);
+}
+
+static void validateColorArray(const nlohmann::json& j, const std::string& name)
+{
+    if (!j.is_array() || j.size() != 4)
+        throw std::runtime_error(name + " must be an array of exactly 4 floats.");
+
+    for (size_t i = 0; i < 4; ++i)
+    {
+        if (!j[i].is_number())
+            throw std::runtime_error(name + " must contain only numeric values.");
+    }
+}
 
 namespace delaunay_flow {
 
@@ -8,39 +27,188 @@ void Settings::Load(const std::string& filename) {
     Instance().loadFromFile(filename);
 }
 
-void Settings::loadFromFile(const std::string& filename) {
-    std::ifstream file(filename);
-    nlohmann::json j;
-    file >> j;
+void Settings::loadFromFile(const std::string& filename)
+{
+    try
+    {
+        std::ifstream file(filename);
+        if (!file.is_open())
+            throw std::runtime_error(
+                "Could not open the settings file:\n" + filename +
+                "\n\nPlease make sure the file exists and is accessible.");
 
-    targetFPS = j["fps"];
-    vsync = j["vsync"];
-    backGroundColors = j["background-colors"].get<std::vector<Color>>();
+        nlohmann::json j;
+        file >> j;
 
-    stars.draw = j["stars"]["draw"];
-    stars.segments = j["stars"]["segments"];
-    stars.radius = j["stars"]["radius"];
-    stars.count = j["stars"]["count"];
-    stars.minSpeed = j["stars"]["min-speed"];
-    stars.maxSpeed = j["stars"]["max-speed"];
-    stars.color = j["stars"]["color"].get<Color>();
+        // --- fps ---
+        if (!j["fps"].is_number() || j["fps"] <= 0.0f)
+            throw std::runtime_error(
+                "Invalid value for \"fps\".\n"
+                "Frames per second must be greater than 0.");
+        targetFPS = j["fps"];
 
-    edges.draw = j["edges"]["draw"];
-    edges.width = j["edges"]["width"];
-    edges.color = j["edges"]["color"].get<Color>();
+        // --- vsync ---
+        if (!j["vsync"].is_boolean())
+            throw std::runtime_error(
+                "Invalid value for \"vsync\".\n"
+                "This setting must be either true or false.");
+        vsync = j["vsync"];
 
-    interaction.mouseInteraction = j["interaction"]["mouse-interaction"];
-    interaction.distanceFromMouse = j["interaction"]["distance-from-mouse"];
-    interaction.speedBasedMouseDistanceMultiplier =
-        j["interaction"]["speed-based-mouse-distance-multiplier"];
+        // --- background-colors ---
+        if (!j["background-colors"].is_array())
+            throw std::runtime_error(
+                "Invalid \"background-colors\" section.\n"
+                "It must be a list of colors.");
 
-    barrier.draw = j["mouse-barrier"]["draw"];
-    barrier.radius = j["mouse-barrier"]["radius"];
-    barrier.color = j["mouse-barrier"]["color"].get<Color>();
-    barrier.blur = j["mouse-barrier"]["blur"];
+        backGroundColors.clear();
+        for (size_t i = 0; i < j["background-colors"].size(); ++i)
+        {
+            const auto& color = j["background-colors"][i];
+            if (!color.is_array() || color.size() != 4)
+                throw std::runtime_error(
+                    "Invalid color in \"background-colors\".\n"
+                    "Each color must contain exactly 4 numbers (R, G, B, A).");
+        }
+        backGroundColors = j["background-colors"].get<std::vector<Color>>();
 
-    offsetBounds = j["offset-bounds"];
-    MSAA = j["MSAA"];
+        // --- stars ---
+        auto& js = j["stars"];
+
+        if (!js["draw"].is_boolean())
+            throw std::runtime_error(
+                "Invalid \"stars.draw\" value.\n"
+                "This setting must be either true or false.");
+        stars.draw = js["draw"];
+
+        if (!js["segments"].is_number_integer() || js["segments"] < 3)
+            throw std::runtime_error(
+                "Invalid \"stars.segments\" value.\n"
+                "It must be greater than 2.");
+        stars.segments = js["segments"];
+
+        if (!js["radius"].is_number() || js["radius"] <= 0.0f)
+            throw std::runtime_error(
+                "Invalid \"stars.radius\" value.\n"
+                "It must be greater than 0.");
+        stars.radius = js["radius"];
+
+        if (!js["count"].is_number_integer() || js["count"] <= 0)
+            throw std::runtime_error(
+                "Invalid \"stars.count\" value.\n"
+                "It must be greater than 0.");
+        stars.count = js["count"];
+
+        if (!js["min-speed"].is_number() || js["min-speed"] < 0.0f)
+            throw std::runtime_error(
+                "Invalid \"stars.min-speed\" value.\n"
+                "It cannot be negative.");
+        stars.minSpeed = js["min-speed"];
+
+        if (!js["max-speed"].is_number() || js["max-speed"] < 0.0f)
+            throw std::runtime_error(
+                "Invalid \"stars.max-speed\" value.\n"
+                "It cannot be negative.");
+        stars.maxSpeed = js["max-speed"];
+
+        if (!js["color"].is_array() || js["color"].size() != 4)
+            throw std::runtime_error(
+                "Invalid \"stars.color\" value.\n"
+                "Color must contain exactly 4 numbers (R, G, B, A).");
+        stars.color = js["color"].get<Color>();
+
+        // --- edges ---
+        auto& je = j["edges"];
+
+        if (!je["draw"].is_boolean())
+            throw std::runtime_error(
+                "Invalid \"edges.draw\" value.\n"
+                "This setting must be either true or false.");
+        edges.draw = je["draw"];
+
+        if (!je["width"].is_number() || je["width"] <= 0.0f)
+            throw std::runtime_error(
+                "Invalid \"edges.width\" value.\n"
+                "It must be greater than 0.");
+        edges.width = je["width"];
+
+        if (!je["color"].is_array() || je["color"].size() != 4)
+            throw std::runtime_error(
+                "Invalid \"edges.color\" value.\n"
+                "Color must contain exactly 4 numbers (R, G, B, A).");
+        edges.color = je["color"].get<Color>();
+
+        // --- interaction ---
+        auto& ji = j["interaction"];
+
+        if (!ji["mouse-interaction"].is_boolean())
+            throw std::runtime_error(
+                "Invalid \"interaction.mouse-interaction\" value.\n"
+                "This setting must be either true or false.");
+        interaction.mouseInteraction = ji["mouse-interaction"];
+
+        if (!ji["distance-from-mouse"].is_number() ||
+            ji["distance-from-mouse"] <= 0.0f)
+            throw std::runtime_error(
+                "Invalid \"interaction.distance-from-mouse\" value.\n"
+                "It must be greater than 0.");
+        interaction.distanceFromMouse = ji["distance-from-mouse"];
+
+        // --- mouse-barrier ---
+        auto& jb = j["mouse-barrier"];
+
+        if (!jb["draw"].is_boolean())
+            throw std::runtime_error(
+                "Invalid \"mouse-barrier.draw\" value.\n"
+                "This setting must be either true or false.");
+        barrier.draw = jb["draw"];
+
+        if (!jb["radius"].is_number() || jb["radius"] <= 0.0f)
+            throw std::runtime_error(
+                "Invalid \"mouse-barrier.radius\" value.\n"
+                "It must be greater than 0.");
+        barrier.radius = jb["radius"];
+
+        if (!jb["color"].is_array() || jb["color"].size() != 4)
+            throw std::runtime_error(
+                "Invalid \"mouse-barrier.color\" value.\n"
+                "Color must contain exactly 4 numbers (R, G, B, A).");
+        barrier.color = jb["color"].get<Color>();
+
+        if (!jb["blur"].is_number() || jb["blur"] < 0.0f)
+            throw std::runtime_error(
+                "Invalid \"mouse-barrier.blur\" value.\n"
+                "It cannot be negative.");
+        barrier.blur = jb["blur"];
+
+        // --- offset-bounds ---
+        if (!j["offset-bounds"].is_number() || j["offset-bounds"] < 0.0f)
+            throw std::runtime_error(
+                "Invalid \"offset-bounds\" value.\n"
+                "It cannot be negative.");
+        offsetBounds = j["offset-bounds"];
+
+        // --- MSAA ---
+        if (!j["MSAA"].is_number_integer() || j["MSAA"] < 0)
+            throw std::runtime_error(
+                "Invalid \"MSAA\" value.\n"
+                "It must be 0 or a positive whole number.");
+        MSAA = j["MSAA"];
+    }
+    catch (const nlohmann::json::parse_error&)
+    {
+        showError(
+            "The settings file is not formatted correctly.\n\n"
+            "Please check the JSON structure for missing commas or brackets.");
+    }
+    catch (const nlohmann::json::exception& e)
+    {
+        showError(std::string("There is a problem in the settings file:\n\n") + e.what());
+    }
+    catch (const std::exception& e)
+    {
+        showError(e.what());
+    }
 }
+
 
 }  // namespace delaunay_flow

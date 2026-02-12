@@ -150,7 +150,7 @@ inline bool in_circle(
     
     return (dx * (ey * cp - bp * fy) -
             dy * (ex * cp - bp * fx) +
-            ap * (ex * fy - ey * fx)) <= EPSILON;
+            ap * (ex * fy - ey * fx)) < 0.0;
 }
 
 

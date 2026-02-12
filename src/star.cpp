@@ -10,13 +10,13 @@ Star::Star(float x, float y, float speed, float angle)
       speedx_(std::cosf(angle) * speed),
       speedy_(std::sinf(angle) * speed) {}
 
-void Star::move(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
+void Star::move(float dt, float mouseXNDC, float mouseYNDC, float mouseDistance,
                 float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
-    (this->*moveFunc_)(dt, mouseXNDC, mouseYNDC, mouseDistanceSqr,
+    (this->*moveFunc_)(dt, mouseXNDC, mouseYNDC, mouseDistance,
                        leftBound, rightBound, bottomBound, topBound);
 }
 
-void Star::normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
+void Star::normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDistance,
                       float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
     orgx_ += speedx_ * dt;
     orgy_ += speedy_ * dt;
@@ -40,7 +40,7 @@ void Star::normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDis
     }
 }
 
-void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
+void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouseDistance,
                          float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
     normalMove(dt, 0.0f, 0.0f, 0.0f, leftBound, rightBound, bottomBound, topBound);
 
@@ -48,8 +48,8 @@ void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouse
     float mouseDistanceY = mouseYNDC - getY();
 
     float mouseDisSqr = mouseDistanceX * mouseDistanceX + mouseDistanceY * mouseDistanceY;
-    if (mouseDisSqr != 0.0f && mouseDisSqr < mouseDistanceSqr) {
-        float ratio = std::sqrt(mouseDistanceSqr / mouseDisSqr);
+    if (mouseDisSqr != 0.0f && mouseDisSqr < mouseDistance * mouseDistance) {
+        float ratio = mouseDistance / std::sqrt(mouseDisSqr);
         x_ = mouseDistanceX + x_ - (mouseDistanceX * ratio);
         y_ = mouseDistanceY + y_ - (mouseDistanceY * ratio);
     }

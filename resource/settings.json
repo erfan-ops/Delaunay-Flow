@@ -28,8 +28,7 @@
 
     "interaction": {
       "mouse-interaction": true,
-      "distance-from-mouse": 0.25,
-      "speed-based-mouse-distance-multiplier": 0
+      "distance-from-mouse": 0.25
     },
 
     "mouse-barrier": {

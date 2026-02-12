@@ -49,7 +49,6 @@ public:
     struct Interaction {
         bool mouseInteraction = false;
         float distanceFromMouse = 0.0f;
-        float speedBasedMouseDistanceMultiplier = 0.0f;
     } interaction;
 
     struct Barrier {
