@@ -61,6 +61,7 @@ add_executable(Delaunay-Flow ${APP_SOURCES} ${HEADERS} ${RESOURCES})
 
 target_include_directories(Delaunay-Flow PRIVATE
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/headers
     ${CMAKE_SOURCE_DIR}/src
 )
 

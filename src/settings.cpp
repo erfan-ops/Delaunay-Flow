@@ -1,4 +1,4 @@
-#include <delaunay_flow/settings.hpp>
+#include <settings.hpp>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <Windows.h>

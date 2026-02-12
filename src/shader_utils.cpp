@@ -1,4 +1,4 @@
-#include <delaunay_flow/shader_utils.hpp>
+#include <shader_utils.hpp>
 #include <fstream>
 #include <sstream>
 #include <iostream>

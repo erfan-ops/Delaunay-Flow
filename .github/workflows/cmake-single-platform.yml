@@ -13,17 +13,19 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
-        vcpkgGitCommitId: 'fd112e0a04e71d32feca136d2c0cf4348e4f512f'
         runVcpkgInstall: true
 
     - name: Configure CMake
       run: >
         cmake -S . -B build
         -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+        -DVCPKG_TARGET_TRIPLET=x64-windows
         -DCMAKE_BUILD_TYPE=Release
 
     - name: Build

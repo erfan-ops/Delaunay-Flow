@@ -1,4 +1,4 @@
-#include <delaunay_flow/star.hpp>
+#include <star.hpp>
 #include <cmath>
 
 namespace delaunay_flow {

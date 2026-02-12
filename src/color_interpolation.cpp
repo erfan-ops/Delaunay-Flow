@@ -1,5 +1,5 @@
-#include <delaunay_flow/color_interpolation.hpp>
-#include <delaunay_flow/types.hpp>
+#include <color_interpolation.hpp>
+#include <types.hpp>
 #include <immintrin.h>
 #include <vector>
 

@@ -19,11 +19,11 @@
 #include <wallpaper-host/desktop_utils.hpp>
 #include <wallpaper-host/tray_utils.hpp>
 
-#include <delaunay_flow/types.hpp>
-#include <delaunay_flow/settings.hpp>
-#include <delaunay_flow/star.hpp>
-#include <delaunay_flow/shader_utils.hpp>
-#include <delaunay_flow/color_interpolation.hpp>
+#include <types.hpp>
+#include <settings.hpp>
+#include <star.hpp>
+#include <shader_utils.hpp>
+#include <color_interpolation.hpp>
 
 #include <resource.h>
 

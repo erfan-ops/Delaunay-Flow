@@ -1,13 +1,19 @@
 {
-  "version": 2,
+  "version": 3,
   "configurePresets": [
     {
-      "name": "ci",
+      "name": "vs-release",
+      "displayName": "Visual Studio 2022 - Release",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      }
+      "cacheVariables": {}
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "configurePreset": "vs-release",
+      "configuration": "Release"
     }
   ]
 }
