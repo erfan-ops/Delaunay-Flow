@@ -1,5 +1,4 @@
-#ifndef DELAUNAY_FLOW_STAR_HPP
-#define DELAUNAY_FLOW_STAR_HPP
+#pragma once
 
 namespace delaunay_flow {
 
@@ -33,5 +32,3 @@ private:
 };
 
 }  // namespace delaunay_flow
-
-#endif  // DELAUNAY_FLOW_STAR_HPP

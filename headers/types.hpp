@@ -1,5 +1,4 @@
-#ifndef DELAUNAY_FLOW_TYPES_HPP
-#define DELAUNAY_FLOW_TYPES_HPP
+#pragma once
 
 #include <array>
 
@@ -27,5 +26,3 @@ struct Vertex {
 };
 
 }  // namespace delaunay_flow
-
-#endif  // DELAUNAY_FLOW_TYPES_HPP

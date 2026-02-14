@@ -29,6 +29,29 @@ add_compile_options(
     /MP             # Multi-processor compilation
 )
 
+set(SHADER_FILES
+    ${CMAKE_SOURCE_DIR}/shaders/vertex.glsl
+    ${CMAKE_SOURCE_DIR}/shaders/fragment.glsl
+)
+
+set(GENERATED_SHADER_HEADER
+    ${CMAKE_BINARY_DIR}/generated/shaders.hpp
+)
+
+string(REPLACE ";" "|" SHADER_FILES_ARG "${SHADER_FILES}")
+
+add_custom_command(
+    OUTPUT ${GENERATED_SHADER_HEADER}
+    COMMAND ${CMAKE_COMMAND}
+        -DINPUT_FILES="${SHADER_FILES_ARG}"  # Changed this line
+        -DOUTPUT_FILE=${GENERATED_SHADER_HEADER}
+        -P ${CMAKE_SOURCE_DIR}/cmake/embed_shaders.cmake
+    DEPENDS ${SHADER_FILES}
+    COMMENT "Embedding GLSL shaders into header"
+)
+
+add_custom_target(generate_shaders DEPENDS ${GENERATED_SHADER_HEADER})
+
 # Application sources - everything else
 set(APP_SOURCES
     src/main.cpp
@@ -36,7 +59,12 @@ set(APP_SOURCES
     src/star.cpp
     src/color_interpolation.cpp
     src/shader_utils.cpp
+    src/application.cpp
+    src/renderer.cpp
+    src/star_system.cpp
+    src/raii.cpp
     include/glad/glad.c
+    include/delaunator/delaunator.cpp
 )
 
 set(HEADERS
@@ -59,10 +87,13 @@ set(EXTRA_FILES
 # ============================================================
 add_executable(Delaunay-Flow ${APP_SOURCES} ${HEADERS} ${RESOURCES})
 
+add_dependencies(Delaunay-Flow generate_shaders)
+
 target_include_directories(Delaunay-Flow PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/headers
     ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_BINARY_DIR}/generated
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -135,7 +166,6 @@ target_link_libraries(Delaunay-Flow PRIVATE
 )
 
 
-
 # ============================================================
 # Post-build steps
 # ============================================================
@@ -143,7 +173,4 @@ add_custom_command(TARGET Delaunay-Flow POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
         ${CMAKE_SOURCE_DIR}/resource/settings.json
         $<TARGET_FILE_DIR:Delaunay-Flow>
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/shaders
-        $<TARGET_FILE_DIR:Delaunay-Flow>/shaders
 )

@@ -4,6 +4,8 @@
 #include <Windows.h>
 
 
+namespace {
+
 static void showError(const std::string& msg)
 {
     MessageBoxA(nullptr, msg.c_str(), "Settings Load Error", MB_OK | MB_ICONERROR);
@@ -20,6 +22,8 @@ static void validateColorArray(const nlohmann::json& j, const std::string& name)
             throw std::runtime_error(name + " must contain only numeric values.");
     }
 }
+
+} // namespace
 
 namespace delaunay_flow {
 

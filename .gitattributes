@@ -2,4 +2,3 @@
 
 include/** linguist-vendored
 lib/** linguist-vendored
-src/glad.c linguist-vendored

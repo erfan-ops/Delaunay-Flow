@@ -2,6 +2,7 @@
 #define DELAUNAY_FLOW_SETTINGS_HPP
 
 #include "types.hpp"
+#include <iostream>
 #include <string>
 #include <vector>
 

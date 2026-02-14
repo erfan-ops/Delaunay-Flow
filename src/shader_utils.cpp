@@ -3,35 +3,13 @@
 #include <sstream>
 #include <iostream>
 
+
 namespace delaunay_flow {
 
-namespace {
-
-std::string readShaderFile(const std::string& filePath) {
-    std::ifstream shaderFile;
-    shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        shaderFile.open(filePath);
-        std::stringstream shaderStream;
-        shaderStream << shaderFile.rdbuf();
-        shaderFile.close();
-        return shaderStream.str();
-    } catch (const std::ifstream::failure&) {
-        std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << filePath << std::endl;
-        return "";
-    }
-}
-
-}  // namespace
-
-GLuint compileShaders(const std::string& vertexPath, const std::string& fragmentPath) {
-    std::string vertexCode = readShaderFile(vertexPath);
-    std::string fragmentCode = readShaderFile(fragmentPath);
-    const char* vShaderCode = vertexCode.c_str();
-    const char* fShaderCode = fragmentCode.c_str();
-
+GLuint compileShaders(const char* vertexCode, const char* fragmentCode) {
+    std::cout << vertexCode << std::endl;
     GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vShaderCode, nullptr);
+    glShaderSource(vertex, 1, &vertexCode, nullptr);
     glCompileShader(vertex);
 
     GLint success;
@@ -43,7 +21,7 @@ GLuint compileShaders(const std::string& vertexPath, const std::string& fragment
     }
 
     GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fShaderCode, nullptr);
+    glShaderSource(fragment, 1, &fragmentCode, nullptr);
     glCompileShader(fragment);
 
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);

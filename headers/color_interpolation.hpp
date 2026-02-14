@@ -1,5 +1,4 @@
-#ifndef DELAUNAY_FLOW_COLOR_INTERPOLATION_HPP
-#define DELAUNAY_FLOW_COLOR_INTERPOLATION_HPP
+#pragma once
 
 #include "types.hpp"
 #include <vector>
@@ -13,5 +12,3 @@ void initInterpolation(const std::vector<Color>& colors);
 Color interpolate(float t);
 
 }  // namespace delaunay_flow
-
-#endif  // DELAUNAY_FLOW_COLOR_INTERPOLATION_HPP
