@@ -1,6 +1,6 @@
 ﻿// Microsoft Visual C++ generated resource script.
 //
-#include "../src/resource.h"
+#include "../headers/resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -26,7 +26,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 TEXTINCLUDE 
 BEGIN
-    "../src/resource.h\0"
+    "../headers/resource.h\0"
 END
 
 2 TEXTINCLUDE 

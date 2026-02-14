@@ -35,7 +35,7 @@ constexpr UINT toUint(MenuId id) noexcept {
 
 class Application {
 public:
-    Application(Settings& s);
+    Application();
     Application(const Application&)            = delete;
     Application& operator=(const Application&) = delete;
 

@@ -1,15 +1,16 @@
 # Delaunay Flow - Geometric Live Desktop Wallpaper
 
 ## Description
+
 Delaunay Flow is a visually striking and interactive live desktop wallpaper that uses Constrained Delaunay Triangulation to generate and color a field of triangles across your screen. Each triangle's color is determined by its vertical position, creating a smooth gradient that flows from top to bottom.
 
 ## Features
 
-- 🔺 Dynamic triangle mesh generated via Constrained Delaunay Triangulation
-- 🌈 Smooth vertical color gradient with multiple color stops
-- ⚙️ Fully customizable via `settings.json`
-- 🚀 High-performance OpenGL rendering
-- 💻 Built in C++ with real-time responsiveness
+- Dynamic triangle mesh generated via Constrained Delaunay Triangulation
+- Smooth vertical color gradient with multiple color stops
+- Fully customizable via `settings.json`
+- High-performance OpenGL rendering
+- Built in C++ with real-time responsiveness
 
 ## Requirements
 
@@ -107,6 +108,6 @@ This project is licensed under the [MIT License](LICENSE).
 ## Acknowledgments
 
 - OpenGL for rendering
-- CDT algorithms for triangle generation
+- Delaunay Triangulation algorithms for triangle generation
 
 🎨 Transform your desktop into a geometric canvas with **Delaunay Flow**! 🔻✨

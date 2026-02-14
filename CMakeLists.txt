@@ -68,7 +68,7 @@ set(APP_SOURCES
 )
 
 set(HEADERS
-    src/resource.h
+    headers/resource.h
 )
 
 set(RESOURCES

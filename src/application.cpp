@@ -30,9 +30,11 @@ static void sleepTick(delaunay_flow::Application::GameTickDuration frameTime, de
 
 namespace delaunay_flow {
 
-Application::Application(Settings& s)
-    : settings_(s), starSystem_(settings_, 0.0f, 0.0f, 0.0f, 0.0f)
+Application::Application()
+    : settings_(Settings::Instance()), starSystem_(settings_, 0.0f, 0.0f, 0.0f, 0.0f)
 {
+    Settings::Load("settings.json");
+
     initInterpolation(settings_.backGroundColors);
 
     initWindow();
