@@ -47,7 +47,7 @@ private:
     using GameTickFunc     = void (*)(GameTickDuration, GameTickDuration, float&) noexcept;
 
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+    void    handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
     void    handleTrayMessage(LPARAM lParam);
     void    handleCommand(WPARAM wParam);
 

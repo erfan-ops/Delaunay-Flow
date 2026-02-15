@@ -137,7 +137,7 @@ LRESULT CALLBACK Application::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
     return DefWindowProc(app->hwnd_, msg, wParam, lParam);
 }
 
-LRESULT Application::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
+void Application::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case wallpaper::tray::WM_TRAYICON:
         handleTrayMessage(lParam);
