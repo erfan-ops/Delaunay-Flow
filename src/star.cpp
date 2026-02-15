@@ -10,14 +10,11 @@ Star::Star(float x, float y, float speed, float angle)
       speedx_(std::cosf(angle) * speed),
       speedy_(std::sinf(angle) * speed) {}
 
-void Star::move(float dt, float mouseXNDC, float mouseYNDC, float mouseDistance,
-                float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
-    (this->*moveFunc_)(dt, mouseXNDC, mouseYNDC, mouseDistance,
-                       leftBound, rightBound, bottomBound, topBound);
+void Star::move(float dt, Rect bounds) noexcept {
+    (this->*moveFunc_)(dt, bounds);
 }
 
-void Star::normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDistance,
-                      float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
+void Star::normalMove(float dt, Rect bounds) noexcept {
     orgx_ += speedx_ * dt;
     orgy_ += speedy_ * dt;
 
@@ -27,25 +24,28 @@ void Star::normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDis
     x_ += xdis * dt;
     y_ += ydis * dt;
 
-    if (orgx_ <= leftBound) {
+    if (orgx_ <= bounds.left) {
         speedx_ = std::abs(speedx_);
-    } else if (orgx_ >= rightBound) {
+        orgx_ -= (orgx_ - bounds.left) * 2;
+    } else if (orgx_ >= bounds.right) {
         speedx_ = -std::abs(speedx_);
+        orgx_ -= (orgx_ - bounds.right) * 2;
     }
 
-    if (orgy_ <= bottomBound) {
+    if (orgy_ <= bounds.bottom) {
         speedy_ = std::abs(speedy_);
-    } else if (orgy_ >= topBound) {
+        orgy_ -= (orgy_ - bounds.bottom) * 2;
+    } else if (orgy_ >= bounds.top) {
         speedy_ = -std::abs(speedy_);
+        orgy_ -= (orgy_ - bounds.top) * 2;
     }
 }
 
-void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouseDistance,
-                         float leftBound, float rightBound, float bottomBound, float topBound) noexcept {
-    normalMove(dt, 0.0f, 0.0f, 0.0f, leftBound, rightBound, bottomBound, topBound);
+void Star::moveWithMouse(float dt, Rect bounds) noexcept {
+    normalMove(dt, bounds);
 
-    float mouseDistanceX = mouseXNDC - getX();
-    float mouseDistanceY = mouseYNDC - getY();
+    float mouseDistanceX = Star::mouseXNDC - getX();
+    float mouseDistanceY = Star::mouseYNDC - getY();
 
     // --- Slight ellipse deformation ---
     constexpr float ellipseFactor = 1.015f;  // 1.0f = perfect circle
@@ -55,9 +55,9 @@ void Star::moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouse
 
     float mouseDisSqr = scaledX * scaledX + scaledY * scaledY;
 
-    if (mouseDisSqr != 0.0f && mouseDisSqr < mouseDistance * mouseDistance) {
+    if (mouseDisSqr != 0.0f && mouseDisSqr < Star::mouseKeepDistance * Star::mouseKeepDistance) {
 
-        float ratio = mouseDistance / std::sqrt(mouseDisSqr);
+        float ratio = Star::mouseKeepDistance / std::sqrt(mouseDisSqr);
 
         x_ = mouseDistanceX + x_ - (mouseDistanceX * ratio);
         y_ = mouseDistanceY + y_ - (mouseDistanceY * ratio);

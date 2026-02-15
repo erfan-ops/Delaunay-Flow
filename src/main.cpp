@@ -7,7 +7,7 @@ int main() {
         delaunay_flow::Application app;
         return app.run();
     } catch (const std::exception& ex) {
-        std::cerr << "Fatal error: " << ex.what() << '\n';
+        MessageBoxA(nullptr, ex.what(), "Fatal error:", MB_OK | MB_ICONERROR);
         return -1;
     }
 }

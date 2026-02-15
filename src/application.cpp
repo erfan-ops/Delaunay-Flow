@@ -31,7 +31,7 @@ static void sleepTick(delaunay_flow::Application::GameTickDuration frameTime, de
 namespace delaunay_flow {
 
 Application::Application()
-    : settings_(Settings::Instance()), starSystem_(settings_, 0.0f, 0.0f, 0.0f, 0.0f)
+    : settings_(Settings::Instance()), starSystem_(settings_, Rect())
 {
     Settings::Load("settings.json");
 
@@ -73,18 +73,24 @@ void Application::initWindow() {
     }
 
     hwnd_ = glfwGetWin32Window(window_.get());
-    SetWindowLongPtr(hwnd_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-    SetWindowLongPtr(hwnd_, GWLP_WNDPROC,  reinterpret_cast<LONG_PTR>(&Application::WndProc));
+    SetWindowLongPtr(hwnd_, GWLP_USERDATA, std::bit_cast<LONG_PTR>(this));
+    SetWindowLongPtr(hwnd_, GWLP_WNDPROC,  std::bit_cast<LONG_PTR>(&Application::WndProc));
 
     starSystem_ = StarSystem(
         settings_,
-        (-settings_.offsetBounds - 1.0f) * aspectRatio_,
-        ( settings_.offsetBounds + 1.0f) * aspectRatio_,
-        -settings_.offsetBounds - 1.0f,
-         settings_.offsetBounds + 1.0f
+        Rect(
+            (-settings_.offsetBounds - 1.0f) * aspectRatio_,
+            ( settings_.offsetBounds + 1.0f) * aspectRatio_,
+             -settings_.offsetBounds - 1.0f,
+              settings_.offsetBounds + 1.0f
+        )
     );
 
     glfwMakeContextCurrent(window_.get());
+
+    glfwGetCursorPos(window_.get(), &mouseX_, &mouseY_);
+    mouseXNDC_ = static_cast<float>(mouseX_) / width_ * 2.0f - 1.0f;
+    mouseYNDC_ = -(static_cast<float>(mouseY_) / height_ * 2.0f - 1.0f);
 }
 
 void Application::initOpenGL() {
@@ -117,10 +123,6 @@ void Application::initTrayAndWallpaper() {
 
     originalWallpaper_ = wallpaper::desktop::GetCurrentWallpaperPath();
 
-    glfwGetCursorPos(window_.get(), &mouseX_, &mouseY_);
-    mouseXNDC_ = static_cast<float>(mouseX_) / width_ * 2.0f - 1.0f;
-    mouseYNDC_ = -(static_cast<float>(mouseY_) / height_ * 2.0f - 1.0f);
-
     wallpaper::desktop::AttachWindowToDesktop(hwnd_);
     attachedToDesktop_ = true;
 
@@ -128,30 +130,29 @@ void Application::initTrayAndWallpaper() {
 }
 
 LRESULT CALLBACK Application::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (auto* app = reinterpret_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))) {
-        return app->handleMessage(hwnd, msg, wParam, lParam);
+    auto* app = std::bit_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (app) {
+        app->handleMessage(msg, wParam, lParam);
     }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+    return DefWindowProc(app->hwnd_, msg, wParam, lParam);
 }
 
-LRESULT Application::handleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT Application::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case wallpaper::tray::WM_TRAYICON:
-        handleTrayMessage(hwnd, lParam);
+        handleTrayMessage(lParam);
         break;
 
     case WM_COMMAND:
-        handleCommand(hwnd, wParam);
+        handleCommand(wParam);
         break;
 
     default:
         break;
     }
-
-    return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-void Application::handleTrayMessage(HWND hwnd, LPARAM lParam) {
+void Application::handleTrayMessage(LPARAM lParam) {
     if (lParam != WM_RBUTTONUP) {
         return;
     }
@@ -167,10 +168,10 @@ void Application::handleTrayMessage(HWND hwnd, LPARAM lParam) {
 
     POINT cursorPos{};
     GetCursorPos(&cursorPos);
-    wallpaper::tray::PostShowContextMenuAsync(hwnd, trayMenu_.get(), cursorPos);
+    wallpaper::tray::PostShowContextMenuAsync(hwnd_, trayMenu_.get(), cursorPos);
 }
 
-void Application::handleCommand(HWND, WPARAM wParam) {
+void Application::handleCommand(WPARAM wParam) {
     const auto id = static_cast<MenuId>(LOWORD(wParam));
     switch (id) {
     case MenuId::Quit:

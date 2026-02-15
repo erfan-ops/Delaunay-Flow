@@ -43,7 +43,7 @@ string(REPLACE ";" "|" SHADER_FILES_ARG "${SHADER_FILES}")
 add_custom_command(
     OUTPUT ${GENERATED_SHADER_HEADER}
     COMMAND ${CMAKE_COMMAND}
-        -DINPUT_FILES="${SHADER_FILES_ARG}"  # Changed this line
+        -DINPUT_FILES="${SHADER_FILES_ARG}"
         -DOUTPUT_FILE=${GENERATED_SHADER_HEADER}
         -P ${CMAKE_SOURCE_DIR}/cmake/embed_shaders.cmake
     DEPENDS ${SHADER_FILES}

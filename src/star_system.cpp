@@ -16,12 +16,8 @@ namespace {
 
 namespace delaunay_flow {
 
-StarSystem::StarSystem(const Settings& settings,
-                       float left, float right, float bottom, float top)
-    : left_(left)
-    , right_(right)
-    , bottom_(bottom)
-    , top_(top)
+StarSystem::StarSystem(const Settings& settings, Rect bounds)
+    : bounds_(bounds)
     , settings_(settings)
 {
     reset();
@@ -32,29 +28,25 @@ void StarSystem::reset() {
     stars_.reserve(static_cast<std::size_t>(settings_.stars.count));
 
     for (int i = 0; i < settings_.stars.count; ++i) {
-        const float x     = randomUniform(left_, right_);
-        const float y     = randomUniform(bottom_, top_);
-        const float speed = randomUniform(settings_.stars.minSpeed,
-                                          settings_.stars.maxSpeed);
+        const float x     = randomUniform(bounds_.left, bounds_.right);
+        const float y     = randomUniform(bounds_.bottom, bounds_.top);
+
+        const float speed = randomUniform(settings_.stars.minSpeed, settings_.stars.maxSpeed);
         const float angle = randomUniform(0.0f, TAU_F);
+        
         stars_.emplace_back(x, y, speed, angle);
     }
 }
 
-void StarSystem::update(std::chrono::duration<float> dt,
-                        float mouseXNDC,
-                        float mouseYNDC)
-{
+void StarSystem::update(std::chrono::duration<float> dt, float mouseXNDC, float mouseYNDC) {
     const float dtSeconds = dt.count();
 
+    Star::mouseXNDC = mouseXNDC;
+    Star::mouseYNDC = mouseYNDC;
+    Star::mouseKeepDistance = settings_.interaction.distanceFromMouse;
+
     for (Star& star : stars_) {
-        star.move(
-            dtSeconds,
-            mouseXNDC,
-            mouseYNDC,
-            settings_.interaction.distanceFromMouse,
-            left_, right_, bottom_, top_
-        );
+        star.move(dtSeconds, bounds_);
     }
 }
 

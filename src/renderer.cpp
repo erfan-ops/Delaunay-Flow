@@ -44,7 +44,7 @@ void Renderer::initState(const Settings& settings,
     glVertexAttribPointer(
         1, 4, GL_FLOAT, GL_FALSE,
         sizeof(Vertex),
-        reinterpret_cast<void*>(offsetof(Vertex, r))
+        std::bit_cast<void*>(offsetof(Vertex, r))
     );
     glEnableVertexAttribArray(1);
 

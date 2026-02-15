@@ -41,16 +41,15 @@ public:
 
     int run();
 
-    static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
     using GameTickDuration = std::chrono::duration<float>;
 
 private:
     using GameTickFunc     = void (*)(GameTickDuration, GameTickDuration, float&) noexcept;
 
-    LRESULT handleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    void    handleTrayMessage(HWND hwnd, LPARAM lParam);
-    void    handleCommand(HWND hwnd, WPARAM wParam);
+    static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+    void    handleTrayMessage(LPARAM lParam);
+    void    handleCommand(WPARAM wParam);
 
     void initWindow();
     void initOpenGL();

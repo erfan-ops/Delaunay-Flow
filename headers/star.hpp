@@ -1,5 +1,7 @@
 #pragma once
 
+#include <types.hpp>
+
 namespace delaunay_flow {
 
 class Star {
@@ -9,16 +11,17 @@ public:
     float getX() const noexcept { return x_; }
     float getY() const noexcept { return y_; }
 
-    void move(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
-              float leftBound, float rightBound, float bottomBound, float topBound) noexcept;
+    void move(float dt, Rect bounds) noexcept;
 
     static void init(bool moveFromMouse) noexcept;
 
+    static float mouseXNDC;
+    static float mouseYNDC;
+    static float mouseKeepDistance;
+
 private:
-    void moveWithMouse(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
-                       float leftBound, float rightBound, float bottomBound, float topBound) noexcept;
-    void normalMove(float dt, float mouseXNDC, float mouseYNDC, float mouseDistanceSqr,
-                    float leftBound, float rightBound, float bottomBound, float topBound) noexcept;
+    void moveWithMouse(float dt, Rect bounds) noexcept;
+    void normalMove(float dt, Rect bounds) noexcept;
 
     float orgx_;
     float orgy_;
@@ -27,7 +30,7 @@ private:
     float speedx_;
     float speedy_;
 
-    using MoveFunc = void (Star::*)(float, float, float, float, float, float, float, float) noexcept;
+    using MoveFunc = void (Star::*)(float, Rect bounds) noexcept;
     static MoveFunc moveFunc_;
 };
 

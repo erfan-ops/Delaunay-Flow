@@ -25,4 +25,14 @@ struct Vertex {
         : x(x_), y(y_), r(color[0]), g(color[1]), b(color[2]), a(color[3]) {}
 };
 
+struct Rect {
+    float left;
+    float right;
+    float bottom;
+    float top;
+
+    Rect(float left_, float right_, float bottom_, float top_) : left(left_), right(right_), bottom(bottom_), top(top_) {}
+    Rect() : left(0.0f), right(0.0f), bottom(0.0f), top(0.0f) {}
+};
+
 }  // namespace delaunay_flow
