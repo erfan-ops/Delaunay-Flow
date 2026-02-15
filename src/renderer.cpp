@@ -120,9 +120,9 @@ void Renderer::rebuildStaticData(const Settings&    settings,
     const int   starsCount             = settings.stars.count;
     const bool  drawStars              = settings.stars.draw;
     const bool  drawEdges              = settings.edges.draw;
-    const auto  starCountSizeT         = static_cast<std::size_t>(starsCount);
+    const auto  starCountULL           = static_cast<std::size_t>(starsCount);
 
-    const std::size_t starCoordCount   = 2U * starCountSizeT;
+    const std::size_t starCoordCount   = 2U * starCountULL;
     coords.resize(starCoordCount);
 
     for (std::size_t i = 0; i < starSystem.stars().size(); ++i) {
@@ -132,16 +132,12 @@ void Renderer::rebuildStaticData(const Settings&    settings,
     }
 
     const std::size_t numberOfStarVertices =
-        drawStars ? starCountSizeT
-                        * static_cast<std::size_t>(settings.stars.segments)
-                        * 3U
+        drawStars ? starCountULL * static_cast<std::size_t>(settings.stars.segments) * 3U
                   : 0U;
 
-    const std::size_t numberOfLineVertices =
-        drawEdges ? starCountSizeT * 18U - 36U : 0U;
+    const std::size_t numberOfLineVertices = drawEdges ? starCountULL * 18U - 36U : 0U;
 
-    const std::size_t numberOfTriangleVertices =
-        starCountSizeT * 6U - 15U;
+    const std::size_t numberOfTriangleVertices = starCountULL * 6U - 15U;
 
     const std::size_t reserveCount =
         numberOfTriangleVertices

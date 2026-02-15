@@ -4,6 +4,9 @@
 namespace delaunay_flow {
 
 Star::MoveFunc Star::moveFunc_ = nullptr;
+float Star::mouseXNDC = 0.0f;
+float Star::mouseYNDC = 0.0f;
+float Star::mouseKeepDistance = 0.0f;
 
 Star::Star(float x, float y, float speed, float angle)
     : orgx_(x), orgy_(y), x_(x), y_(y),
