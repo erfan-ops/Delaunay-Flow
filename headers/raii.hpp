@@ -44,6 +44,28 @@ struct GlfwWindowDeleter {
 
 using GlfwWindowPtr = std::unique_ptr<GLFWwindow, GlfwWindowDeleter>;
 
+class Window {
+public:
+    explicit Window(int msaa = 0);
+
+    Window(const Window&)            = delete;
+    Window& operator=(const Window&) = delete;
+    Window(Window&&) noexcept            = default;
+    Window& operator=(Window&&) noexcept = default;
+
+    [[nodiscard]] GLFWwindow* get() const noexcept;
+    [[nodiscard]] HWND        hwnd() const noexcept;
+    [[nodiscard]] float       width() const noexcept;
+    [[nodiscard]] float       height() const noexcept;
+    [[nodiscard]] int         widthPx() const noexcept;
+    [[nodiscard]] int         heightPx() const noexcept;
+
+private:
+    GlfwWindowPtr window_;
+    int           widthPx_{};
+    int           heightPx_{};
+};
+
 class VertexArray {
 public:
     VertexArray();

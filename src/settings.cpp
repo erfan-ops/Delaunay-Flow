@@ -27,18 +27,22 @@ static void validateColorArray(const nlohmann::json& j, const std::string& name)
 
 namespace delaunay_flow {
 
-void Settings::Load(const std::string& filename) {
-    Instance().loadFromFile(filename);
+namespace {
+    constexpr const char* kSettingsFilename = "settings.json";
 }
 
-void Settings::loadFromFile(const std::string& filename)
+Settings::Settings() {
+    loadFromFile();
+}
+
+void Settings::loadFromFile()
 {
     try
     {
-        std::ifstream file(filename);
+        std::ifstream file(kSettingsFilename);
         if (!file.is_open())
             throw std::runtime_error(
-                "Could not open the settings file:\n" + filename +
+                "Could not open the settings file:\n" + std::string(kSettingsFilename) +
                 "\n\nPlease make sure the file exists and is accessible.");
 
         nlohmann::json j;

@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
 
-set(CMAKE_TOOLCHAIN_FILE "E:/coding/C/vcpkg/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(VCPKG_TARGET_TRIPLET x64-windows-static CACHE STRING "")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 

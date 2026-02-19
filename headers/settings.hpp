@@ -2,7 +2,6 @@
 #define DELAUNAY_FLOW_SETTINGS_HPP
 
 #include "types.hpp"
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -15,16 +14,14 @@ public:
         return instance;
     }
 
-    static void Load(const std::string& filename);
-
     Settings(const Settings&) = delete;
     Settings& operator=(const Settings&) = delete;
     Settings(Settings&&) = delete;
     Settings& operator=(Settings&&) = delete;
 
 private:
-    Settings() = default;
-    void loadFromFile(const std::string& filename);
+    Settings();
+    void loadFromFile();
 
 public:
     float targetFPS = 0.0f;

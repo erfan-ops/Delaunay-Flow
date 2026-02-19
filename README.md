@@ -2,7 +2,7 @@
 
 ## Description
 
-Delaunay Flow is a visually striking and interactive live desktop wallpaper that uses Constrained Delaunay Triangulation to generate and color a field of triangles across your screen. Each triangle's color is determined by its vertical position, creating a smooth gradient that flows from top to bottom.
+Delaunay Flow is a visually striking and interactive live desktop wallpaper that uses Delaunay Triangulation to generate and color a field of triangles across your screen. Each triangle's color is determined by its vertical position, creating a smooth gradient that flows from top to bottom.
 
 ## Features
 
@@ -110,4 +110,4 @@ This project is licensed under the [MIT License](LICENSE).
 - OpenGL for rendering
 - Delaunay Triangulation algorithms for triangle generation
 
-🎨 Transform your desktop into a geometric canvas with **Delaunay Flow**! 🔻✨
+🎨 Transform your desktop into a geometric canvas with **Delaunay Flow**! ✨

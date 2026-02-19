@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -47,7 +46,7 @@ private:
     using GameTickFunc     = void (*)(GameTickDuration, GameTickDuration, float&) noexcept;
 
     static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    void    handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+    LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
     void    handleTrayMessage(LPARAM lParam);
     void    handleCommand(WPARAM wParam);
 
@@ -60,15 +59,13 @@ private:
 
 private:
     GlfwContext   glfwContext_{};
-    GlfwWindowPtr window_{};
-    HWND          hwnd_{nullptr};
-
-    Settings&  settings_;
-    StarSystem starSystem_;
+    Settings&     settings_;
+    Window        window_;
+    StarSystem    starSystem_;
 
     std::vector<double> coords_;
     std::vector<Vertex> vertices_;
-    std::optional<Renderer> renderer_;
+    Renderer            renderer_;
 
     std::wstring originalWallpaper_;
     WinMenu      trayMenu_{};

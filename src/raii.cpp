@@ -1,6 +1,8 @@
 #include "raii.hpp"
 
-#include <iostream>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 #include <stdexcept>
 #include <utility>
 
@@ -44,6 +46,57 @@ void GlfwWindowDeleter::operator()(GLFWwindow* window) const noexcept {
     if (window != nullptr) {
         glfwDestroyWindow(window);
     }
+}
+
+// Window implementation
+Window::Window(int msaa) {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    if (msaa > 0) {
+        glfwWindowHint(GLFW_SAMPLES, msaa);
+    }
+
+    widthPx_  = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    heightPx_ = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    window_.reset(glfwCreateWindow(widthPx_, heightPx_, "Delaunay Flow", nullptr, nullptr));
+    if (!window_) {
+        throw std::runtime_error("Failed to create GLFW window");
+    }
+
+    glfwMakeContextCurrent(window_.get());
+
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+        throw std::runtime_error("Failed to initialize GLAD");
+    }
+}
+
+GLFWwindow* Window::get() const noexcept {
+    return window_.get();
+}
+
+HWND Window::hwnd() const noexcept {
+    return glfwGetWin32Window(window_.get());
+}
+
+float Window::width() const noexcept {
+    return static_cast<float>(widthPx_);
+}
+
+float Window::height() const noexcept {
+    return static_cast<float>(heightPx_);
+}
+
+int Window::widthPx() const noexcept {
+    return widthPx_;
+}
+
+int Window::heightPx() const noexcept {
+    return heightPx_;
 }
 
 // VertexArray implementation

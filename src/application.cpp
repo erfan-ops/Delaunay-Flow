@@ -1,11 +1,6 @@
 #include <application.hpp>
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-
-#include <iostream>
 #include <thread>
 
 namespace {
@@ -31,9 +26,24 @@ static void sleepTick(delaunay_flow::Application::GameTickDuration frameTime, de
 namespace delaunay_flow {
 
 Application::Application()
-    : settings_(Settings::Instance()), starSystem_(settings_, Rect())
+    : settings_(Settings::Instance()),
+      window_(settings_.MSAA),
+      starSystem_(
+          settings_,
+          Rect(
+              (-settings_.offsetBounds - 1.0f) * (window_.width() / window_.height()),
+              ( settings_.offsetBounds + 1.0f) * (window_.width() / window_.height()),
+              -settings_.offsetBounds - 1.0f,
+               settings_.offsetBounds + 1.0f
+          )
+      ),
+      renderer_(settings_, window_.width(), window_.height())
 {
-    Settings::Load("settings.json");
+    width_       = window_.width();
+    height_      = window_.height();
+    aspectRatio_ = width_ / height_;
+    iWidth_      = window_.widthPx();
+    iHeight_     = window_.heightPx();
 
     initInterpolation(settings_.backGroundColors);
 
@@ -48,33 +58,8 @@ int Application::run() {
 }
 
 void Application::initWindow() {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    iWidth_  = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    iHeight_ = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-    width_       = static_cast<float>(iWidth_);
-    height_      = static_cast<float>(iHeight_);
-    aspectRatio_ = width_ / height_;
-
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-
-    if (settings_.MSAA > 0) {
-        glfwWindowHint(GLFW_SAMPLES, settings_.MSAA);
-    }
-
-    window_.reset(glfwCreateWindow(iWidth_, iHeight_, "Delaunay Flow", nullptr, nullptr));
-    if (!window_) {
-        throw std::runtime_error("Failed to create GLFW window");
-    }
-
-    hwnd_ = glfwGetWin32Window(window_.get());
-    SetWindowLongPtr(hwnd_, GWLP_USERDATA, std::bit_cast<LONG_PTR>(this));
-    SetWindowLongPtr(hwnd_, GWLP_WNDPROC,  std::bit_cast<LONG_PTR>(&Application::WndProc));
+    SetWindowLongPtr(window_.hwnd(), GWLP_USERDATA, std::bit_cast<LONG_PTR>(this));
+    SetWindowLongPtr(window_.hwnd(), GWLP_WNDPROC,  std::bit_cast<LONG_PTR>(&Application::WndProc));
 
     starSystem_ = StarSystem(
         settings_,
@@ -86,18 +71,12 @@ void Application::initWindow() {
         )
     );
 
-    glfwMakeContextCurrent(window_.get());
-
     glfwGetCursorPos(window_.get(), &mouseX_, &mouseY_);
     mouseXNDC_ = static_cast<float>(mouseX_) / width_ * 2.0f - 1.0f;
     mouseYNDC_ = -(static_cast<float>(mouseY_) / height_ * 2.0f - 1.0f);
 }
 
 void Application::initOpenGL() {
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
-        throw std::runtime_error("Failed to initialize GLAD");
-    }
-
     Star::init(settings_.interaction.mouseInteraction);
 
     stepInterval_ = std::chrono::duration<float>(1.0f / static_cast<float>(settings_.targetFPS));
@@ -110,20 +89,18 @@ void Application::initOpenGL() {
         tickFunc_ = &sleepTick;
     }
 
-    renderer_.emplace(settings_, width_, height_);
+    renderer_.rebuildStaticData(settings_, starSystem_, coords_, vertices_);
 
-    renderer_->rebuildStaticData(settings_, starSystem_, coords_, vertices_);
-
-    wallpaper::tray::StartTrayMenuThread(hwnd_);
+    wallpaper::tray::StartTrayMenuThread(window_.hwnd());
 }
 
 void Application::initTrayAndWallpaper() {
     trayIcon_.reset(loadIconFromResource());
-    wallpaper::tray::RegisterIcon(hwnd_, trayIcon_.get(), L"Just a Simple Icon");
+    wallpaper::tray::RegisterIcon(window_.hwnd(), trayIcon_.get(), L"Just a Simple Icon");
 
     originalWallpaper_ = wallpaper::desktop::GetCurrentWallpaperPath();
 
-    wallpaper::desktop::AttachWindowToDesktop(hwnd_);
+    wallpaper::desktop::AttachWindowToDesktop(window_.hwnd());
     attachedToDesktop_ = true;
 
     glfwShowWindow(window_.get());
@@ -132,23 +109,23 @@ void Application::initTrayAndWallpaper() {
 LRESULT CALLBACK Application::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     auto* app = std::bit_cast<Application*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     if (app) {
-        app->handleMessage(msg, wParam, lParam);
+        return app->handleMessage(msg, wParam, lParam);
     }
-    return DefWindowProc(app->hwnd_, msg, wParam, lParam);
+    return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-void Application::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT Application::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case wallpaper::tray::WM_TRAYICON:
         handleTrayMessage(lParam);
-        break;
+        return 0;
 
     case WM_COMMAND:
         handleCommand(wParam);
-        break;
+        return 0;
 
     default:
-        break;
+        return DefWindowProc(window_.hwnd(), msg, wParam, lParam);
     }
 }
 
@@ -168,7 +145,7 @@ void Application::handleTrayMessage(LPARAM lParam) {
 
     POINT cursorPos{};
     GetCursorPos(&cursorPos);
-    wallpaper::tray::PostShowContextMenuAsync(hwnd_, trayMenu_.get(), cursorPos);
+    wallpaper::tray::PostShowContextMenuAsync(window_.hwnd(), trayMenu_.get(), cursorPos);
 }
 
 void Application::handleCommand(WPARAM wParam) {
@@ -184,11 +161,11 @@ void Application::handleCommand(WPARAM wParam) {
 
     case MenuId::ToggleAttach:
         if (attachedToDesktop_) {
-            wallpaper::desktop::DetachWindowFromDesktop(hwnd_);
+            wallpaper::desktop::DetachWindowFromDesktop(window_.hwnd());
             SystemParametersInfo(
                 SPI_SETDESKWALLPAPER,
                 0,
-                const_cast<wchar_t*>(originalWallpaper_.c_str()),
+                originalWallpaper_.data(),
                 SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
             );
             attachedToDesktop_ = false;
@@ -196,7 +173,7 @@ void Application::handleCommand(WPARAM wParam) {
                        toUint(MenuId::ToggleAttach), L"Attach");
         } else {
             glfwSetWindowPos(window_.get(), 0, 0);
-            wallpaper::desktop::AttachWindowToDesktop(hwnd_);
+            wallpaper::desktop::AttachWindowToDesktop(window_.hwnd());
             attachedToDesktop_ = true;
             ModifyMenu(trayMenu_.get(), toUint(MenuId::ToggleAttach), MF_STRING,
                        toUint(MenuId::ToggleAttach), L"Detach");
@@ -232,7 +209,7 @@ void Application::mainLoop() {
 
         if (restartRequested_.exchange(false)) {
             starSystem_.reset();
-            renderer_->rebuildStaticData(settings_, starSystem_, coords_, vertices_);
+            renderer_.rebuildStaticData(settings_, starSystem_, coords_, vertices_);
         }
 
         starSystem_.update(dt, mouseXNDC_, mouseYNDC_);
@@ -245,9 +222,9 @@ void Application::mainLoop() {
 
         delaunator::Delaunator delaunator(coords_);
 
-        renderer_->updateFrameGeometry(settings_, starSystem_, coords_, vertices_, delaunator);
-        renderer_->uploadVertices(vertices_);
-        renderer_->render(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+        renderer_.updateFrameGeometry(settings_, starSystem_, coords_, vertices_, delaunator);
+        renderer_.uploadVertices(vertices_);
+        renderer_.render(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
         glfwSwapBuffers(window_.get());
         glfwPollEvents();
@@ -258,7 +235,7 @@ void Application::mainLoop() {
     }
 
     if (attachedToDesktop_) {
-        wallpaper::desktop::DetachWindowFromDesktop(hwnd_);
+        wallpaper::desktop::DetachWindowFromDesktop(window_.hwnd());
     }
 
     SystemParametersInfo(
@@ -268,7 +245,7 @@ void Application::mainLoop() {
         SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
     );
 
-    wallpaper::tray::UnregisterIcon(hwnd_);
+    wallpaper::tray::UnregisterIcon(window_.hwnd());
 }
 
 } // namespace delaunay_flow

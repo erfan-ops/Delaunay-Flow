@@ -7,7 +7,6 @@
 namespace delaunay_flow {
 
 GLuint compileShaders(const char* vertexCode, const char* fragmentCode) {
-    std::cout << vertexCode << std::endl;
     GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vertexCode, nullptr);
     glCompileShader(vertex);
