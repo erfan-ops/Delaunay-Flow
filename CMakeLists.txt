@@ -155,7 +155,10 @@ find_package(glfw3 CONFIG REQUIRED)
 
 add_library(wallpaper_host STATIC IMPORTED)
 set_target_properties(wallpaper_host PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/wallpaper_host_static_mt.lib"
+    IMPORTED_LOCATION_RELEASE "${CMAKE_SOURCE_DIR}/lib/wallpaper_host_static_mt.lib"
+    IMPORTED_LOCATION_DEBUG "${CMAKE_SOURCE_DIR}/lib/wallpaper_host_static_mtd.lib"
+    MAP_IMPORTED_CONFIG_MINSIZEREL Release
+    MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release
 )
 
 target_link_libraries(Delaunay-Flow PRIVATE

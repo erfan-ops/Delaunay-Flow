@@ -7,6 +7,13 @@
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {}
+    },
+    {
+      "name": "vs-debug",
+      "displayName": "Visual Studio 2022 - Debug",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {}
     }
   ],
   "buildPresets": [
@@ -14,6 +21,11 @@
       "name": "release",
       "configurePreset": "vs-release",
       "configuration": "Release"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "vs-debug",
+      "configuration": "Debug"
     }
   ]
 }
