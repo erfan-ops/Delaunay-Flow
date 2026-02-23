@@ -28,12 +28,29 @@ Delaunay Flow is a visually striking and interactive live desktop wallpaper that
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/erfan-ops/Delaunay-Flow.git
+   git clone https://github.com/erfan-ops/Delaunay-Flow.git 
+   cd Delaunay-Flow
    ```
 
-2. Open the project in Visual Studio 2022.
-3. Build the solution.
-4. Run the executable from the output directory.
+2. Generate and build using CMake (choose one):
+
+   **Release build:**
+
+   ```bash
+   cmake --preset vs-release
+   cmake --build --preset release
+   ```
+
+   **Debug build:**
+
+   ```bash
+   cmake --preset vs-debug
+   cmake --build --preset debug
+   ```
+
+3. Run the executable from the output directory:
+   - Release: `build/Release/Delaunay-Flow.exe`
+   - Debug: `build/Debug/Delaunay-Flow.exe`
 
 ## Configuration
 

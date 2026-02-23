@@ -9,9 +9,11 @@
 
 namespace delaunay_flow {
 
-Renderer::Renderer(const Settings& settings,
-                   const float     screenWidth,
-                   const float     screenHeight)
+Renderer::Renderer(
+    const Settings& settings,
+    const float     screenWidth,
+    const float     screenHeight
+)
     : program_(compileShaders(vertex_glsl, fragment_glsl))
     , screenWidth_(screenWidth)
     , screenHeight_(screenHeight)
@@ -24,9 +26,10 @@ Renderer::Renderer(const Settings& settings,
     initState(settings, screenWidth, screenHeight);
 }
 
-void Renderer::initState(const Settings& settings,
-                         const float     screenWidth,
-                         const float     screenHeight)
+void Renderer::initState(
+    const Settings& settings,
+    const float     screenWidth,
+    const float     screenHeight)
 {
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_BLEND);
@@ -112,17 +115,18 @@ void Renderer::initState(const Settings& settings,
     verticesCount = numberOfTriangleVertices + numberOfStarVertices + numberOfLineVertices;
 }
 
-void Renderer::rebuildStaticData(const Settings&    settings,
-                                 const StarSystem&  starSystem,
-                                 std::vector<double>& coords,
-                                 std::vector<Vertex>& vertices)
+void Renderer::rebuildStaticData(
+    const Settings&      settings,
+    const StarSystem&    starSystem,
+    std::vector<double>& coords,
+    std::vector<Vertex>& vertices)
 {
-    const int   starsCount             = settings.stars.count;
-    const bool  drawStars              = settings.stars.draw;
-    const bool  drawEdges              = settings.edges.draw;
-    const auto  starCountULL           = static_cast<std::size_t>(starsCount);
+    const int   starsCount   = settings.stars.count;
+    const bool  drawStars    = settings.stars.draw;
+    const bool  drawEdges    = settings.edges.draw;
+    const auto  starCountULL = static_cast<std::size_t>(starsCount);
 
-    const std::size_t starCoordCount   = 2U * starCountULL;
+    const std::size_t starCoordCount = 2U * starCountULL;
     coords.resize(starCoordCount);
 
     for (std::size_t i = 0; i < starSystem.stars().size(); ++i) {
@@ -148,11 +152,12 @@ void Renderer::rebuildStaticData(const Settings&    settings,
     vertices.reserve(reserveCount);
 }
 
-void Renderer::updateFrameGeometry(const Settings&         settings,
-                                   const StarSystem&       starSystem,
-                                   const std::vector<double>& coords,
-                                   std::vector<Vertex>&    vertices,
-                                   delaunator::Delaunator& delaunator)
+void Renderer::updateFrameGeometry(
+    const Settings&         settings,
+    const StarSystem&       starSystem,
+    const std::vector<double>& coords,
+    std::vector<Vertex>&    vertices,
+    delaunator::Delaunator& delaunator)
 {
     vertices.clear();
     insertTriangles(delaunator, vertices);
@@ -179,8 +184,9 @@ void Renderer::render(const float mouseX, const float mouseY) const noexcept {
     glUseProgram(0);
 }
 
-void Renderer::insertTriangles(delaunator::Delaunator& d,
-                               std::vector<Vertex>&    vertices) const
+void Renderer::insertTriangles(
+    delaunator::Delaunator& d,
+    std::vector<Vertex>&    vertices) const
 {
     for (std::size_t i = 0; i < d.triangles.size(); i += 3U) {
         const std::size_t aIdx = 2U * d.triangles[i];
@@ -205,9 +211,10 @@ void Renderer::insertTriangles(delaunator::Delaunator& d,
     }
 }
 
-void Renderer::insertStars(const Settings&   settings,
-                           const StarSystem& starSystem,
-                           std::vector<Vertex>& vertices) const
+void Renderer::insertStars(
+    const Settings&   settings,
+    const StarSystem& starSystem,
+    std::vector<Vertex>& vertices) const
 {
     if (!settings.stars.draw) {
         return;
@@ -235,9 +242,10 @@ void Renderer::insertStars(const Settings&   settings,
     }
 }
 
-void Renderer::insertLines(const Settings&   settings,
-                           delaunator::Delaunator& d,
-                           std::vector<Vertex>&    vertices) const
+void Renderer::insertLines(
+    const Settings&   settings,
+    delaunator::Delaunator& d,
+    std::vector<Vertex>&    vertices) const
 {
     if (!settings.edges.draw) {
         return;

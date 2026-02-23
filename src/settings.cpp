@@ -6,21 +6,8 @@
 
 namespace {
 
-static void showError(const std::string& msg)
-{
+static void showError(const std::string& msg) {
     MessageBoxA(nullptr, msg.c_str(), "Settings Load Error", MB_OK | MB_ICONERROR);
-}
-
-static void validateColorArray(const nlohmann::json& j, const std::string& name)
-{
-    if (!j.is_array() || j.size() != 4)
-        throw std::runtime_error(name + " must be an array of exactly 4 floats.");
-
-    for (size_t i = 0; i < 4; ++i)
-    {
-        if (!j[i].is_number())
-            throw std::runtime_error(name + " must contain only numeric values.");
-    }
 }
 
 } // namespace
@@ -35,8 +22,7 @@ Settings::Settings() {
     loadFromFile();
 }
 
-void Settings::loadFromFile()
-{
+void Settings::loadFromFile() {
     try
     {
         std::ifstream file(kSettingsFilename);
