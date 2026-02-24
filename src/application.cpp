@@ -18,6 +18,8 @@ static void sleepTick(delaunay_flow::Application::GameTickDuration frameTime, de
         if (sleepMilliseconds > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(sleepMilliseconds));
         }
+    } else {
+        fractionalTime -= std::max((frameTime - stepInterval).count(), 0.0f);
     }
 }
 
@@ -33,8 +35,8 @@ Application::Application()
           Rect(
               (-settings_.offsetBounds - 1.0f) * (window_.width() / window_.height()),
               ( settings_.offsetBounds + 1.0f) * (window_.width() / window_.height()),
-              -settings_.offsetBounds - 1.0f,
-               settings_.offsetBounds + 1.0f
+               -settings_.offsetBounds - 1.0f,
+                settings_.offsetBounds + 1.0f
           )
       ),
       renderer_(settings_, window_.width(), window_.height())
@@ -72,7 +74,7 @@ void Application::initWindow() {
     );
 
     glfwGetCursorPos(window_.get(), &mouseX_, &mouseY_);
-    mouseXNDC_ = static_cast<float>(mouseX_) / width_ * 2.0f - 1.0f;
+    mouseXNDC_ =   static_cast<float>(mouseX_) / width_  * 2.0f - 1.0f;
     mouseYNDC_ = -(static_cast<float>(mouseY_) / height_ * 2.0f - 1.0f);
 }
 
